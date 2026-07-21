@@ -15,6 +15,8 @@ async function bootstrap() {
   });
   
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  const uploadDir = process.env.UPLOAD_DIR ?? (process.env.VERCEL ? "/tmp" : "./uploads");
+  app.use("/uploads/files", express.static(uploadDir));
   await app.init();
   return server;
 }

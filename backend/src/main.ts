@@ -14,8 +14,12 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const uploadDir = process.env.UPLOAD_DIR ?? "./uploads";
-  if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
+  const uploadDir = process.env.UPLOAD_DIR ?? (process.env.VERCEL ? "/tmp" : "./uploads");
+  try {
+    if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
+  } catch (err) {
+    console.warn("Failed to create upload directory:", err);
+  }
   app.use("/uploads/files", express.static(join(process.cwd(), uploadDir)));
 
   const port = Number(process.env.PORT ?? 3001);
