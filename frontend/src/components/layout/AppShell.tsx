@@ -13,6 +13,8 @@ import {
   Building2,
   Command,
   MessageSquare,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
@@ -57,6 +59,11 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
   const logout = useApp((s) => s.logout);
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -76,8 +83,8 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
 
   return (
     <div className="flex min-h-screen bg-surface text-slate">
-      {/* Sidebar */}
-      <aside className="w-60 shrink-0 border-r border-border bg-white flex flex-col sticky top-0 h-screen">
+      {/* Desktop Sidebar (hidden on mobile) */}
+      <aside className="w-60 shrink-0 border-r border-border bg-white hidden md:flex flex-col sticky top-0 h-screen">
         <div className="p-6 pb-8">
           <Link to={variant === "tenant" ? "/app/dashboard" : "/superadmin/dashboard"} className="block group">
             <div className="flex items-center gap-2.5">
@@ -156,24 +163,126 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 min-w-0 flex flex-col">
-        <header className="h-20 border-b border-border bg-white/60 backdrop-blur-sm sticky top-0 z-30 flex items-center justify-between px-8">
-          <div className="min-w-0">
-            {subtitle && (
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {subtitle}
-              </p>
-            )}
-            <h1 className="font-display text-2xl font-semibold truncate">{title}</h1>
-          </div>
+      {/* Mobile Sidebar Overlay Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar Drawer */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col border-r border-border transition-transform duration-300 transform md:hidden",
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <Link to={variant === "tenant" ? "/app/dashboard" : "/superadmin/dashboard"} className="flex items-center gap-2">
+            <img src="/logo.png" alt="PropVault Logo" className="h-7 w-7" />
+            <span className="font-display italic text-xl font-semibold text-slate">PropVault</span>
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-1 text-slate/50 hover:text-slate rounded-md"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {nav.map((item) => {
+            const active =
+              pathname === item.to ||
+              (item.to !== "/app/dashboard" &&
+                item.to !== "/superadmin/dashboard" &&
+                pathname.startsWith(item.to));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                  active
+                    ? "bg-slate/5 text-slate"
+                    : "text-slate/50 hover:text-slate hover:bg-slate/[0.03]",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                <span className="truncate">{item.label}</span>
+                {active && (
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-gold" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <button
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setPaletteOpen(true);
+          }}
+          className="mx-3 mb-3 flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-secondary transition-colors"
+        >
+          <Command className="h-3 w-3" />
+          <span>Quick nav</span>
+          <span className="ml-auto text-[10px] font-mono">⌘K</span>
+        </button>
+
+        <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3">
+            <div className="size-9 shrink-0 rounded-full bg-slate/10 grid place-items-center font-display font-semibold text-slate text-sm">
+              {user?.full_name.slice(0, 1) ?? "U"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold truncate">{user?.full_name ?? "User"}</p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {org?.name ?? (user?.is_superadmin ? "PropVault Platform" : "")}
+              </p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-slate p-1"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Container */}
+      <main className="flex-1 min-w-0 flex flex-col">
+        <header className="h-20 border-b border-border bg-white/60 backdrop-blur-sm sticky top-0 z-30 flex items-center justify-between px-4 md:px-8">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Hamburger button on mobile */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 md:hidden text-slate/50 hover:text-slate rounded-md -ml-2"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="min-w-0">
+              {subtitle && (
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground truncate">
+                  {subtitle}
+                </p>
+              )}
+              <h1 className="font-display text-lg md:text-2xl font-semibold truncate">{title}</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
             {actions}
             {variant === "tenant" && <NotificationsTray />}
           </div>
         </header>
 
-        <div className="flex-1 p-8">{children}</div>
+        <div className="flex-1 p-4 md:p-8">{children}</div>
       </main>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} variant={variant} />
