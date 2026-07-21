@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum PlotStatus {
+  AVAILABLE
+  INQUIRY
+  BOOKED
+  SOLD
+}
+
+enum ScheduleStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIAL
+}
+
+enum TxDirection {
+  IN
+  OUT
+}
+
+enum PaymentMode {
+  CASH
+  BANK
+  UPI
+  CHEQUE
+  CARD
+}
+
+enum TxType {
+  TOKEN
+  BOOKING
+  INSTALLMENT
+  FINAL
+  REFUND
+  LANDOWNER_PAYOUT
+  FINANCIER_PAYOUT
+  VENDOR
+  SALARY
+  MISC
+}
+
+enum AreaUnit {
+  SQFT
+  SQM
+}
+
+
+model Organization {
+  id         String   @id @default(uuid())
+  name       String
+  phone      String
+  address    String
+  city       String
+  state      String
+  status     OrgStatus @default(ACTIVE)
+  created_at DateTime @default(now())
+  users      User[]
+  sites      Site[]
+  plots      Plot[]
+  customers  Customer[]
+  bookings   Booking[]
+  transactions Transaction[]
+  inquiries  Inquiry[]
+  audit      AuditEntry[]
+  templates  PermissionTemplate[]
+}
+
+model User {
+  id             String   @id @default(uuid())
+  org_id         String?
+  org            Organization? @relation(fields: [org_id], references: [id])
+  full_name      String
+  email          String   @unique
+  password_hash  String
+  reports_to     String?
+  is_superadmin  Boolean  @default(false)
+  require_password_reset Boolean @default(false)
+  permissions    Json
+  permission_template_id String?
+  last_login_at  DateTime?
+  created_at     DateTime @default(now())
+}
+
+model PermissionTemplate {
+  id           String @id @default(uuid())
+  org_id       String
+  org          Organization @relation(fields: [org_id], references: [id])
+  name         String
+  is_default   Boolean @default(false)
+  permissions  Json
+  usage_count  Int @default(0)
+}
+
+model Site {
+  id         String   @id @default(uuid())
+  org_id     String
+  org        Organization @relation(fields: [org_id], references: [id])
+  name       String
+  address    String
+  area_unit  AreaUnit @default(SQFT)
+  photo_url  String?
+  layout     Json
+  created_at DateTime @default(now())
+  plots      Plot[]
+}
+
+model Plot {
+  id           String @id @default(uuid())
+  org_id       String
+  org          Organization @relation(fields: [org_id], references: [id])
+  site_id      String
+  site         Site @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  plot_number  String
+  length       Float
+  width        Float
+  area         Float
+  price        Decimal @db.Decimal(14, 2)
+  facing       String
+  plot_type    String
+  status       PlotStatus @default(AVAILABLE)
+  notes        String?
+  bookings     Booking[]
+  transactions Transaction[]
+  inquiries    Inquiry[]
+  @@index([site_id])
+}
+
+model Customer {
+  id         String @id @default(uuid())
+  org_id     String
+  org        Organization @relation(fields: [org_id], references: [id])
+  full_name  String
+  phone      String
+  email      String
+  created_at DateTime @default(now())
+  bookings   Booking[]
+  transactions Transaction[]
+}
+
+model Booking {
+  id               String @id @default(uuid())
+  org_id           String
+  org              Organization @relation(fields: [org_id], references: [id])
+  plot_id          String
+  plot             Plot @relation(fields: [plot_id], references: [id])
+  customer_id      String
+  customer         Customer @relation(fields: [customer_id], references: [id])
+  total_sale_price Decimal @db.Decimal(14, 2)
+  booking_date     DateTime
+  cancelled_at     DateTime?
+  schedule         InstallmentStage[]
+  transactions     Transaction[]
+}
+
+model InstallmentStage {
+  id           String @id @default(uuid())
+  booking_id   String
+  booking      Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  stage_name   String
+  amount_due   Decimal @db.Decimal(14, 2)
+  due_date     DateTime
+  paid_amount  Decimal @db.Decimal(14, 2) @default(0)
+  paid_date    DateTime?
+  status       ScheduleStatus @default(PENDING)
+  sort_order   Int @default(0)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id               String @id @default(uuid())
+  org_id           String
+  org              Organization @relation(fields: [org_id], references: [id])
+  direction        TxDirection
+  type             TxType
+  party_name       String
+  amount           Decimal @db.Decimal(14, 2)
+  payment_mode     PaymentMode
+  transaction_date DateTime
+  receipt_url      String?
+  idempotency_key  String
+  booking_id       String?
+  booking          Booking? @relation(fields: [booking_id], references: [id])
+  stage_id         String?
+  stage            InstallmentStage? @relation(fields: [stage_id], references: [id])
+  plot_id          String?
+  plot             Plot? @relation(fields: [plot_id], references: [id])
+  customer_id      String?
+  customer         Customer? @relation(fields: [customer_id], references: [id])
+  reversal_of      String?
+  notes            String?
+  created_at       DateTime @default(now())
+  @@unique([org_id, idempotency_key])
+  @@index([direction, transaction_date])
+}
+
+model Inquiry {
+  id           String @id @default(uuid())
+  org_id       String
+  org          Organization @relation(fields: [org_id], references: [id])
+  plot_id      String
+  plot         Plot @relation(fields: [plot_id], references: [id])
+  customer_name String
+  phone        String
+  notes        String
+  created_at   DateTime @default(now())
+}
+
+model AuditEntry {
+  id          String @id @default(uuid())
+  org_id      String?
+  org         Organization? @relation(fields: [org_id], references: [id])
+  actor_id    String?
+  actor_name  String
+  action      String
+  entity_type String
+  entity_id   String?
+  detail      String
+  timestamp   DateTime @default(now())
+  @@index([org_id, timestamp])
+}
