@@ -1,13 +1,12 @@
-import "reflect-metadata";
-import { NestFactory } from "@nestjs/core";
-import { ExpressAdapter } from "@nestjs/platform-express";
-import { AppModule } from "./src/app.module";
-import { ValidationPipe } from "@nestjs/common";
-import express from "express";
+const { NestFactory } = require("@nestjs/core");
+const { ExpressAdapter } = require("@nestjs/platform-express");
+const { AppModule } = require("./dist/src/app.module");
+const { ValidationPipe } = require("@nestjs/common");
+const express = require("express");
 
 const server = express();
 
-export const bootstrap = async () => {
+async function bootstrap() {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   
   app.enableCors({
@@ -18,13 +17,13 @@ export const bootstrap = async () => {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   await app.init();
   return server;
-};
+}
 
-let cachedServer: any;
+let cachedServer;
 
-export default async function handler(req: any, res: any) {
+module.exports = async (req, res) => {
   if (!cachedServer) {
     cachedServer = await bootstrap();
   }
   return cachedServer(req, res);
-}
+};
