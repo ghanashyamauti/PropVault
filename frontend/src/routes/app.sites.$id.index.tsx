@@ -31,6 +31,7 @@ import { Map as MapIcon, List, Plus, Pencil, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlotDrawer } from "@/components/plots/PlotDrawer";
 import { RoadDrawer } from "@/components/plots/RoadDrawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/app/sites/$id/")({
   head: () => ({ meta: [{ title: "Site — PropVault" }] }),
@@ -50,6 +51,7 @@ function SiteDetail() {
   const [openPlot, setOpenPlot] = useState<string | null>(null);
   const [openRoad, setOpenRoad] = useState<string | null>(null);
   const [editSiteOpen, setEditSiteOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   if (!site) return <AppShell variant="tenant" title="Site not found">–</AppShell>;
 
@@ -218,19 +220,35 @@ function SiteDetail() {
         </div>
       )}
 
-      {/* Plot drawer */}
-      <Sheet open={!!openPlot} onOpenChange={(o) => !o && setOpenPlot(null)}>
-        <SheetContent className="sm:max-w-lg overflow-y-auto p-0">
-          {openPlot && <PlotDrawer plotId={openPlot} onClose={() => setOpenPlot(null)} />}
-        </SheetContent>
-      </Sheet>
+      {/* Plot drawer (Dialog / Pop Model on Mobile, Sheet on Desktop) */}
+      {isMobile ? (
+        <Dialog open={!!openPlot} onOpenChange={(o) => !o && setOpenPlot(null)}>
+          <DialogContent className="max-w-lg overflow-y-auto p-0 rounded-lg max-h-[85vh]">
+            {openPlot && <PlotDrawer plotId={openPlot} onClose={() => setOpenPlot(null)} />}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Sheet open={!!openPlot} onOpenChange={(o) => !o && setOpenPlot(null)}>
+          <SheetContent className="sm:max-w-lg overflow-y-auto p-0">
+            {openPlot && <PlotDrawer plotId={openPlot} onClose={() => setOpenPlot(null)} />}
+          </SheetContent>
+        </Sheet>
+      )}
 
-      {/* Road drawer */}
-      <Sheet open={!!openRoad} onOpenChange={(o) => !o && setOpenRoad(null)}>
-        <SheetContent className="sm:max-w-md overflow-y-auto p-0">
-          {openRoad && <RoadDrawer roadId={openRoad} siteId={id} onClose={() => setOpenRoad(null)} />}
-        </SheetContent>
-      </Sheet>
+      {/* Road drawer (Dialog / Pop Model on Mobile, Sheet on Desktop) */}
+      {isMobile ? (
+        <Dialog open={!!openRoad} onOpenChange={(o) => !o && setOpenRoad(null)}>
+          <DialogContent className="max-w-md overflow-y-auto p-0 rounded-lg max-h-[85vh]">
+            {openRoad && <RoadDrawer roadId={openRoad} siteId={id} onClose={() => setOpenRoad(null)} />}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Sheet open={!!openRoad} onOpenChange={(o) => !o && setOpenRoad(null)}>
+          <SheetContent className="sm:max-w-md overflow-y-auto p-0">
+            {openRoad && <RoadDrawer roadId={openRoad} siteId={id} onClose={() => setOpenRoad(null)} />}
+          </SheetContent>
+        </Sheet>
+      )}
 
       {editSiteOpen && (
         <EditSiteDialog
