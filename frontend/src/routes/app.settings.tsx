@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import { currentUser } from "@/data/selectors";
+import { currentUser, can } from "@/data/selectors";
 
 export const Route = createFileRoute("/app/settings")({
   head: () => ({ meta: [{ title: "Settings — PropVault" }] }),
@@ -35,11 +35,15 @@ function Settings() {
 
   if (!user) return <AppShell variant="tenant" title="Settings">–</AppShell>;
 
+  const isAdmin = user.permissions.is_org_admin;
+  const canEditSettings = isAdmin || can(user.permissions, "settings", "edit");
+  const canViewSettings = isAdmin || can(user.permissions, "settings", "view");
+
   return (
     <AppShell variant="tenant" title="Settings" subtitle="Workspace, profile & email">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-6xl">
         {/* Org */}
-        {org && user.permissions.is_org_admin && (
+        {org && canEditSettings && (
           <section className="bg-white rounded-xl border border-border p-6">
             <h3 className="font-display text-lg font-semibold mb-4">Organization profile</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -178,7 +182,7 @@ function Settings() {
         </section>
 
         {/* SMTP */}
-        {user.permissions.is_org_admin && (
+        {canEditSettings && (
           <section className="bg-white rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-lg font-semibold">SMTP settings</h3>

@@ -9,12 +9,14 @@ import {
   moneyCompact,
   orgScope,
   plotCollected,
+  currentUser,
+  can,
 } from "@/data/selectors";
 import { StatusPill, customerStatusKind } from "@/components/ui-ext/StatusPill";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Fragment, useState } from "react";
-import { ChevronDown, ChevronRight, Bell } from "lucide-react";
+import { ChevronDown, ChevronRight, Bell, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/app/customers/")({
 
 function Customers() {
   const state = useApp();
+  const me = useApp(currentUser);
   const orgId = state.session?.org_id;
   const customers = orgScope(state.customers, orgId);
   const bookings = orgScope(state.bookings, orgId);
@@ -34,6 +37,23 @@ function Customers() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"ALL" | "ON_TRACK" | "OVERDUE" | "FULLY_PAID" | "TOKEN_ONLY">("ALL");
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  const isAdmin = me?.permissions?.is_org_admin;
+  const canView = isAdmin || can(me?.permissions, "customers", "view");
+
+  if (!canView) {
+    return (
+      <AppShell variant="tenant" title="Customers" subtitle="Access restricted">
+        <div className="max-w-md bg-white rounded-xl border border-border p-8 text-center">
+          <ShieldAlert className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+          <h3 className="font-display text-lg font-semibold mb-1">Access Restricted</h3>
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to view customer profiles.
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
 
   const withStatus = customers.map((c) => {
     const booking = bookings.find((b) => b.customer_id === c.id && !b.cancelled_at);

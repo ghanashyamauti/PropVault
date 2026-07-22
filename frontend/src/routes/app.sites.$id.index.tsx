@@ -155,6 +155,7 @@ function SiteDetail() {
             plots={plots}
             interactive={false}
             filterStatuses={filter === "ALL" ? undefined : [filter as PlotStatus]}
+            searchQuery={q}
             onOpenPlot={(pid) => setOpenPlot(pid)}
             onOpenRoad={(rid) => setOpenRoad(rid)}
             onChange={(updater) => {

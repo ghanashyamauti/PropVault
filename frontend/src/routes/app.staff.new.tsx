@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { useApp } from "@/data/store";
-import { orgScope } from "@/data/selectors";
+import { orgScope, currentUser, can } from "@/data/selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ import type {
   PermissionMatrix,
 } from "@/data/types";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, ShieldAlert } from "lucide-react";
 
 const entities: { id: PermissionEntity; label: string }[] = [
   { id: "sites", label: "Sites" },
@@ -43,6 +43,7 @@ interface Props {
 
 function StaffFormComponent({ mode, userId }: Props) {
   const navigate = useNavigate();
+  const me = useApp(currentUser);
   const orgId = useApp((s) => s.session?.org_id);
   const users = useApp((s) => orgScope(s.users, orgId));
   const templates = useApp((s) => orgScope(s.templates, orgId));
@@ -50,6 +51,9 @@ function StaffFormComponent({ mode, userId }: Props) {
   const createStaff = useApp((s) => s.createStaff);
   const updateStaff = useApp((s) => s.updateStaff);
   const createTemplate = useApp((s) => s.createTemplate);
+
+  const isMeAdmin = me?.permissions?.is_org_admin;
+  const canAccess = isMeAdmin || can(me?.permissions, "staff", mode === "create" ? "add" : "edit");
 
   const [step, setStep] = useState<0 | 1>(0);
   const [name, setName] = useState(existing?.full_name ?? "");
@@ -65,6 +69,20 @@ function StaffFormComponent({ mode, userId }: Props) {
   );
   const [saveTemplateName, setSaveTemplateName] = useState("");
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
+
+  if (!canAccess) {
+    return (
+      <AppShell variant="tenant" title="Staff" subtitle="Access restricted">
+        <div className="max-w-md bg-white rounded-xl border border-border p-8 text-center">
+          <ShieldAlert className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+          <h3 className="font-display text-lg font-semibold mb-1">Access Restricted</h3>
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to {mode === "create" ? "add" : "edit"} staff members.
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
 
   useEffect(() => {
     if (!templateId) return;
@@ -262,6 +280,7 @@ function StaffFormComponent({ mode, userId }: Props) {
               </div>
               <Switch
                 checked={perms.is_org_admin}
+                disabled={!isMeAdmin}
                 onCheckedChange={(c) => setPerms({ ...perms, is_org_admin: c })}
               />
             </div>

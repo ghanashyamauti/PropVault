@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useApp } from "@/data/store";
-import { currentUser } from "@/data/selectors";
+import { currentUser, can } from "@/data/selectors";
+import type { PermissionEntity } from "@/data/types";
 import {
   LayoutDashboard,
   Map as MapIcon,
@@ -23,16 +24,21 @@ import { NotificationsTray } from "./NotificationsTray";
 import { DemoControls } from "./DemoControls";
 import { useEffect, useState } from "react";
 
-const tenantNav = [
+const tenantNav: Array<{
+  to: string;
+  label: string;
+  icon: any;
+  entity?: PermissionEntity;
+}> = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/app/sites", label: "Sites", icon: MapIcon },
-  { to: "/app/customers", label: "Customers", icon: Users },
-  { to: "/app/payments", label: "Payments", icon: Wallet },
-  { to: "/app/inquiries", label: "Inquiries", icon: MessageSquare },
-  { to: "/app/staff", label: "Staff", icon: UserCog },
-  { to: "/app/templates", label: "Templates", icon: ShieldCheck },
-  { to: "/app/settings", label: "Settings", icon: Settings },
-] as const;
+  { to: "/app/sites", label: "Sites", icon: MapIcon, entity: "sites" },
+  { to: "/app/customers", label: "Customers", icon: Users, entity: "customers" },
+  { to: "/app/payments", label: "Payments", icon: Wallet, entity: "payments" },
+  { to: "/app/inquiries", label: "Inquiries", icon: MessageSquare, entity: "customers" },
+  { to: "/app/staff", label: "Staff", icon: UserCog, entity: "staff" },
+  { to: "/app/templates", label: "Templates", icon: ShieldCheck, entity: "templates" },
+  { to: "/app/settings", label: "Settings", icon: Settings, entity: "settings" },
+];
 
 const superAdminNav = [
   { to: "/superadmin/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -48,9 +54,14 @@ interface AppShellProps {
 }
 
 export function AppShell({ variant, title, subtitle, actions, children }: AppShellProps) {
-  const nav = variant === "tenant" ? tenantNav : superAdminNav;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const user = useApp(currentUser);
+  const rawNav = variant === "tenant" ? tenantNav : superAdminNav;
+  const nav = rawNav.filter((item) => {
+    if (variant === "superadmin") return true;
+    if (user?.permissions?.is_org_admin) return true;
+    return can(user?.permissions, item.entity, "view");
+  });
   const org = useApp((s) =>
     variant === "tenant" && s.session?.org_id
       ? s.organizations.find((o) => o.id === s.session!.org_id)

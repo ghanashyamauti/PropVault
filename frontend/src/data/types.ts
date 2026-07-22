@@ -108,7 +108,7 @@ export type PlanElement =
     }
   | {
       id: UUID;
-      type: "tree" | "gate" | "water_tank" | "clubhouse" | "dp_box" | "light_pole";
+      type: "tree" | "gate" | "entry" | "exit" | "entry_exit" | "water_tank" | "clubhouse" | "dp_box" | "light_pole";
       x: number;
       y: number;
       label?: string;

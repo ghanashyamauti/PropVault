@@ -34,9 +34,11 @@ const tools = [
   { id: "plot", label: "Plot", key: "P" },
   { id: "road", label: "Road", key: "R" },
   { id: "draw_road", label: "Draw Road", key: "D" },
+  { id: "entry", label: "Entry Gate", key: "E" },
+  { id: "exit", label: "Exit Gate", key: "X" },
+  { id: "gate", label: "Main Gate", key: "" },
   { id: "garden", label: "Garden", key: "G" },
   { id: "tree", label: "Tree", key: "T" },
-  { id: "gate", label: "Gate", key: "" },
   { id: "water_tank", label: "Water Tank", key: "" },
   { id: "clubhouse", label: "Clubhouse", key: "" },
   { id: "parking", label: "Parking", key: "" },
@@ -50,9 +52,11 @@ const toolHints: Record<string, string> = {
   plot: "Click and drag to draw a plot. Auto-numbered.",
   road: "Click and drag for a road segment. Select it, then drag the round points to bend.",
   draw_road: "Click and drag to sketch/draw a winding road. Select it, then drag points to bend.",
+  entry: "Click to place a dedicated Entry Gate marker. Select to rotate or edit label.",
+  exit: "Click to place a dedicated Exit Gate marker. Select to rotate or edit label.",
+  gate: "Click to place a main gate.",
   garden: "Draw a garden zone.",
   tree: "Click to place a tree.",
-  gate: "Click to place a gate.",
   water_tank: "Click to place a water tank.",
   clubhouse: "Click to place the clubhouse.",
   parking: "Draw a parking area.",
@@ -99,21 +103,6 @@ function Designer() {
       if (historyRef.current.length > 30) historyRef.current.shift();
       historyIdx.current = historyRef.current.length - 1;
       window.localStorage.setItem(draftKey, JSON.stringify(next));
-      // Auto-sync any new plot shapes to CRM so they're immediately editable/clickable
-      const hasUnsynced = next.elements.some(
-        (el) => el.type === "plot" && !el.plot_id,
-      );
-      if (hasUnsynced) {
-        // Persist layout first so syncPlanPlotsToCRM sees the latest elements
-        queueMicrotask(() => {
-          saveLayout(id, next);
-          const added = syncPlots(id);
-          if (added > 0) {
-            const fresh = useApp.getState().sites.find((x) => x.id === id);
-            if (fresh) setLayout(fresh.layout);
-          }
-        });
-      }
       return next;
     });
   };
@@ -187,6 +176,7 @@ function Designer() {
 
   const save = () => {
     saveLayout(id, layout);
+    syncPlots(id);
     window.localStorage.removeItem(draftKey);
     toast.success("Master plan saved");
     navigate({ to: "/app/sites/$id", params: { id } });
@@ -360,7 +350,11 @@ function Designer() {
             activeTool={activeTool}
             onSelect={setSelectedId}
             onChange={commit}
-            onOpenPlot={(pid) => navigate({ to: "/app/sites/$id", search: { plot: pid } as any, params: { id } })}
+            onOpenPlot={(pid) =>
+              setSelectedId(
+                layout.elements.find((el) => el.type === "plot" && (el.plot_id === pid || el.id === pid))?.id ?? null,
+              )
+            }
           />
 
           {/* Hint */}
@@ -692,39 +686,40 @@ function ElementInspector({
         </div>
       )}
 
+      {(el.type === "light_pole" || el.type === "entry" || el.type === "exit" || el.type === "entry_exit" || el.type === "gate") && (
+        <div>
+          <Label className="text-xs">Rotation — {el.rotation ?? 0}°</Label>
+          <Slider
+            min={0}
+            max={359}
+            step={1}
+            value={[el.rotation ?? 0]}
+            onValueChange={(v) => onChange({ ...el, rotation: v[0] } as PlanElement)}
+            className="mt-2"
+          />
+        </div>
+      )}
+
       {el.type === "light_pole" && (
-        <>
-          <div>
-            <Label className="text-xs">Rotation — {el.rotation ?? 0}°</Label>
-            <Slider
-              min={0}
-              max={359}
-              step={1}
-              value={[el.rotation ?? 0]}
-              onValueChange={(v) => onChange({ ...el, rotation: v[0] })}
-              className="mt-2"
-            />
-          </div>
-          <div className="flex items-center justify-between pt-2">
-            <Label className="text-xs">Light Status</Label>
-            <Button
-              size="sm"
-              variant={!("light_on" in el ? el.light_on : true) ? "outline" : "default"}
-              className={cn(
-                "h-7 text-xs px-3",
-                !("light_on" in el ? el.light_on : true) ? "" : "bg-emerald hover:bg-emerald/90 text-white"
-              )}
-              onClick={() =>
-                onChange({
-                  ...el,
-                  light_on: !("light_on" in el ? el.light_on : true),
-                })
-              }
-            >
-              {!("light_on" in el ? el.light_on : true) ? "OFF" : "ON"}
-            </Button>
-          </div>
-        </>
+        <div className="flex items-center justify-between pt-2">
+          <Label className="text-xs">Light Status</Label>
+          <Button
+            size="sm"
+            variant={!("light_on" in el ? el.light_on : true) ? "outline" : "default"}
+            className={cn(
+              "h-7 text-xs px-3",
+              !("light_on" in el ? el.light_on : true) ? "" : "bg-emerald hover:bg-emerald/90 text-white"
+            )}
+            onClick={() =>
+              onChange({
+                ...el,
+                light_on: !("light_on" in el ? el.light_on : true),
+              })
+            }
+          >
+            {!("light_on" in el ? el.light_on : true) ? "OFF" : "ON"}
+          </Button>
+        </div>
       )}
 
       <div className="pt-3 border-t border-border">

@@ -9,7 +9,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useApp } from "@/data/store";
-import { orgScope } from "@/data/selectors";
+import { orgScope, currentUser, can } from "@/data/selectors";
 import {
   Building2,
   LayoutDashboard,
@@ -30,6 +30,7 @@ interface Props {
 
 export function CommandPalette({ open, onOpenChange, variant }: Props) {
   const navigate = useNavigate();
+  const user = useApp(currentUser);
   const orgId = useApp((s) => s.session?.org_id);
   const sites = useApp((s) => orgScope(s.sites, orgId));
   const plots = useApp((s) => orgScope(s.plots, orgId));
@@ -40,6 +41,10 @@ export function CommandPalette({ open, onOpenChange, variant }: Props) {
     onOpenChange(false);
     navigate({ to });
   };
+
+  const isAdmin = user?.permissions?.is_org_admin;
+  const canView = (entity: any) => isAdmin || can(user?.permissions, entity, "view");
+  const canAdd = (entity: any) => isAdmin || can(user?.permissions, entity, "add");
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
@@ -53,38 +58,56 @@ export function CommandPalette({ open, onOpenChange, variant }: Props) {
               <CommandItem onSelect={() => go("/app/dashboard")}>
                 <LayoutDashboard className="h-4 w-4" /> Dashboard
               </CommandItem>
-              <CommandItem onSelect={() => go("/app/sites")}>
-                <MapIcon className="h-4 w-4" /> Sites
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/customers")}>
-                <Users className="h-4 w-4" /> Customers
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/payments")}>
-                <Wallet className="h-4 w-4" /> Payments
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/staff")}>
-                <UserCog className="h-4 w-4" /> Staff
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/templates")}>
-                <ShieldCheck className="h-4 w-4" /> Permission Templates
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/settings")}>
-                <Settings className="h-4 w-4" /> Settings
-              </CommandItem>
+              {canView("sites") && (
+                <CommandItem onSelect={() => go("/app/sites")}>
+                  <MapIcon className="h-4 w-4" /> Sites
+                </CommandItem>
+              )}
+              {canView("customers") && (
+                <CommandItem onSelect={() => go("/app/customers")}>
+                  <Users className="h-4 w-4" /> Customers
+                </CommandItem>
+              )}
+              {canView("payments") && (
+                <CommandItem onSelect={() => go("/app/payments")}>
+                  <Wallet className="h-4 w-4" /> Payments
+                </CommandItem>
+              )}
+              {canView("staff") && (
+                <CommandItem onSelect={() => go("/app/staff")}>
+                  <UserCog className="h-4 w-4" /> Staff
+                </CommandItem>
+              )}
+              {canView("templates") && (
+                <CommandItem onSelect={() => go("/app/templates")}>
+                  <ShieldCheck className="h-4 w-4" /> Permission Templates
+                </CommandItem>
+              )}
+              {canView("settings") && (
+                <CommandItem onSelect={() => go("/app/settings")}>
+                  <Settings className="h-4 w-4" /> Settings
+                </CommandItem>
+              )}
             </CommandGroup>
 
             <CommandSeparator />
 
             <CommandGroup heading="Actions">
-              <CommandItem onSelect={() => go("/app/sites/new")}>
-                <Plus className="h-4 w-4" /> Add site
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/payments/new")}>
-                <Plus className="h-4 w-4" /> Record payment
-              </CommandItem>
-              <CommandItem onSelect={() => go("/app/staff/new")}>
-                <Plus className="h-4 w-4" /> Invite staff
-              </CommandItem>
+              {canAdd("sites") && (
+                <CommandItem onSelect={() => go("/app/sites/new")}>
+                  <Plus className="h-4 w-4" /> Add site
+                </CommandItem>
+              )}
+              {canAdd("payments") && (
+                <CommandItem onSelect={() => go("/app/payments/new")}>
+                  <Plus className="h-4 w-4" /> Record payment
+                </CommandItem>
+              )}
+              {canAdd("staff") && (
+                <CommandItem onSelect={() => go("/app/staff/new")}>
+                  <Plus className="h-4 w-4" /> Invite staff
+                </CommandItem>
+              )}
             </CommandGroup>
 
             <CommandSeparator />

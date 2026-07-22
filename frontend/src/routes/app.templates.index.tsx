@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { useApp } from "@/data/store";
-import { orgScope } from "@/data/selectors";
+import { orgScope, currentUser, can } from "@/data/selectors";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
-import { Star, Trash2, Copy } from "lucide-react";
+import { Star, Trash2, Copy, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import {
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/app/templates/")({
 });
 
 function Templates() {
+  const me = useApp(currentUser);
   const orgId = useApp((s) => s.session?.org_id);
   const templates = useApp((s) => orgScope(s.templates, orgId));
   const setDefault = useApp((s) => s.setDefaultTemplate);
@@ -31,15 +32,35 @@ function Templates() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
 
+  const isAdmin = me?.permissions?.is_org_admin;
+  const canView = isAdmin || can(me?.permissions, "templates", "view");
+  const canEdit = isAdmin || can(me?.permissions, "templates", "edit");
+
+  if (!canView) {
+    return (
+      <AppShell variant="tenant" title="Permission templates" subtitle="Access restricted">
+        <div className="max-w-md bg-white rounded-xl border border-border p-8 text-center">
+          <ShieldAlert className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+          <h3 className="font-display text-lg font-semibold mb-1">Access Restricted</h3>
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to view or manage permission templates.
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell
       variant="tenant"
       title="Permission templates"
       subtitle="Presets"
       actions={
-        <Button className="bg-slate hover:bg-slate/90" onClick={() => setOpen(true)}>
-          New template
-        </Button>
+        canEdit ? (
+          <Button className="bg-slate hover:bg-slate/90" onClick={() => setOpen(true)}>
+            New template
+          </Button>
+        ) : null
       }
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

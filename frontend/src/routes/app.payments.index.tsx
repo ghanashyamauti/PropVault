@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { useApp } from "@/data/store";
-import { fmtDate, money, moneyCompact, orgScope } from "@/data/selectors";
+import { fmtDate, money, moneyCompact, orgScope, currentUser, can } from "@/data/selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui-ext/StatusPill";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, ArrowDownLeft, Plus, RotateCcw, FileDown, Undo2, Mail } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Plus, RotateCcw, FileDown, Undo2, Mail, ShieldAlert } from "lucide-react";
 import Decimal from "decimal.js";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/app/payments/")({
 });
 
 function Payments() {
+  const me = useApp(currentUser);
   const orgId = useApp((s) => s.session?.org_id);
   const txs = useApp((s) => orgScope(s.transactions, orgId));
   const plots = useApp((s) => orgScope(s.plots, orgId));
@@ -42,6 +43,25 @@ function Payments() {
   const [modeFilter, setModeFilter] = useState<string>("ALL");
   const reverse = useApp((s) => s.reverseTransaction);
   const [reverseId, setReverseId] = useState<string | null>(null);
+
+  const isAdmin = me?.permissions?.is_org_admin;
+  const canView = isAdmin || can(me?.permissions, "payments", "view");
+  const canAdd = isAdmin || can(me?.permissions, "payments", "add");
+  const canEdit = isAdmin || can(me?.permissions, "payments", "edit");
+
+  if (!canView) {
+    return (
+      <AppShell variant="tenant" title="Payments" subtitle="Access restricted">
+        <div className="max-w-md bg-white rounded-xl border border-border p-8 text-center">
+          <ShieldAlert className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+          <h3 className="font-display text-lg font-semibold mb-1">Access Restricted</h3>
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to view payment transactions.
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
   const [reverseNote, setReverseNote] = useState("");
   const [emailDialog, setEmailDialog] = useState<{
     open: boolean;
@@ -130,11 +150,13 @@ function Payments() {
           >
             <Undo2 className="h-4 w-4" /> Undo
           </Button>
-          <Button asChild className="bg-slate hover:bg-slate/90">
-            <Link to="/app/payments/new">
-              <Plus className="h-4 w-4" /> Record transaction
-            </Link>
-          </Button>
+          {canAdd && (
+            <Button asChild className="bg-slate hover:bg-slate/90">
+              <Link to="/app/payments/new">
+                <Plus className="h-4 w-4" /> Record transaction
+              </Link>
+            </Button>
+          )}
         </>
       }
     >

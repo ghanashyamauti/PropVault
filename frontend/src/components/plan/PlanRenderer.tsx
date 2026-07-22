@@ -10,6 +10,11 @@ import {
   Building,
   ParkingSquare,
   Zap,
+  Lock,
+  Unlock,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from "lucide-react";
 
 function distToSegment(p: { x: number; y: number }, v: { x: number; y: number }, w: { x: number; y: number }) {
@@ -83,6 +88,7 @@ interface Props {
   interactive: boolean;
   selectedId?: string | null;
   filterStatuses?: PlotStatus[]; // if set, only these are highlighted
+  searchQuery?: string;
   onSelect?: (id: string | null) => void;
   onOpenPlot?: (plotId: string) => void;
   onOpenRoad?: (roadId: string) => void;
@@ -116,6 +122,7 @@ export function PlanRenderer({
   interactive,
   selectedId,
   filterStatuses,
+  searchQuery,
   onSelect,
   onOpenPlot,
   onOpenRoad,
@@ -166,12 +173,21 @@ export function PlanRenderer({
     };
   };
 
-  // Wheel zoom at cursor (registered natively with { passive: false } to lock scroll zoom)
+  const [scrollZoomEnabled, setScrollZoomEnabled] = useState(false);
+  const scrollZoomEnabledRef = useRef(scrollZoomEnabled);
+  useEffect(() => {
+    scrollZoomEnabledRef.current = scrollZoomEnabled;
+  }, [scrollZoomEnabled]);
+
+  // Wheel zoom at cursor (only intercepts when scroll zoom toggle is ON or Ctrl key is pressed)
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
 
     const handleWheel = (e: WheelEvent) => {
+      if (!scrollZoomEnabledRef.current && !e.ctrlKey && !e.metaKey) {
+        return; // Allow page to scroll normally
+      }
       e.preventDefault();
       const rect = svg.getBoundingClientRect();
       const mx = e.clientX - rect.left;
@@ -196,12 +212,51 @@ export function PlanRenderer({
     };
   }, []);
 
-  // Fit / center helpers exposed via key press
+  // Fit / center helpers & Zoom controls
   const fit = () => {
     const svg = svgRef.current!;
+    if (!svg) return;
     const rect = svg.getBoundingClientRect();
     const s = Math.min(rect.width / viewW, rect.height / viewH) * 0.9;
     setVp({ scale: s, tx: (rect.width - viewW * s) / 2, ty: (rect.height - viewH * s) / 2 });
+  };
+
+  const zoomIn = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const mx = rect.width / 2;
+    const my = rect.height / 2;
+    const factor = 1.25;
+    setVp((prev) => {
+      const newScale = Math.max(0.2, Math.min(5, prev.scale * factor));
+      const wx = (mx - prev.tx) / prev.scale;
+      const wy = (my - prev.ty) / prev.scale;
+      return {
+        scale: newScale,
+        tx: mx - wx * newScale,
+        ty: my - wy * newScale,
+      };
+    });
+  };
+
+  const zoomOut = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const mx = rect.width / 2;
+    const my = rect.height / 2;
+    const factor = 1 / 1.25;
+    setVp((prev) => {
+      const newScale = Math.max(0.2, Math.min(5, prev.scale * factor));
+      const wx = (mx - prev.tx) / prev.scale;
+      const wy = (my - prev.ty) / prev.scale;
+      return {
+        scale: newScale,
+        tx: mx - wx * newScale,
+        ty: my - wy * newScale,
+      };
+    });
   };
 
   const [isPanning, setIsPanning] = useState(false);
@@ -458,211 +513,283 @@ export function PlanRenderer({
   }, [plots]);
 
   return (
-    <svg
-      ref={svgRef}
-      className={cn("w-full h-full bg-parchment select-none", interactive && activeTool && "cursor-crosshair", isPanning && "cursor-grabbing")}
-      style={{ touchAction: "none" }}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
-      onTouchStart={(e) => {
-        const t = e.touches[0];
-        if (!t) return;
-        onMouseDown({
-          clientX: t.clientX, clientY: t.clientY, button: 0,
-          currentTarget: e.currentTarget, target: e.target, preventDefault: () => e.preventDefault(),
-        } as unknown as React.MouseEvent<SVGSVGElement>);
-      }}
-      onTouchMove={(e) => {
-        const t = e.touches[0];
-        if (!t) return;
-        onMouseMove({
-          clientX: t.clientX, clientY: t.clientY,
-          currentTarget: e.currentTarget, target: e.target,
-        } as unknown as React.MouseEvent<SVGSVGElement>);
-      }}
-      onTouchEnd={(e) => onMouseUp(e as unknown as React.MouseEvent<SVGSVGElement>)}
-    >
+    <div className="relative w-full h-full overflow-hidden group/plan">
+      <svg
+        ref={svgRef}
+        className={cn("w-full h-full bg-parchment select-none", interactive && activeTool && "cursor-crosshair", isPanning && "cursor-grabbing")}
+        style={{ touchAction: "none" }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (!t) return;
+          onMouseDown({
+            clientX: t.clientX, clientY: t.clientY, button: 0,
+            currentTarget: e.currentTarget, target: e.target, preventDefault: () => e.preventDefault(),
+          } as unknown as React.MouseEvent<SVGSVGElement>);
+        }}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (!t) return;
+          onMouseMove({
+            clientX: t.clientX, clientY: t.clientY,
+            currentTarget: e.currentTarget, target: e.target,
+          } as unknown as React.MouseEvent<SVGSVGElement>);
+        }}
+        onTouchEnd={(e) => onMouseUp(e as unknown as React.MouseEvent<SVGSVGElement>)}
+      >
+        <defs>
+          <pattern id="grid" width={M * 5} height={M * 5} patternUnits="userSpaceOnUse">
+            <path d={`M ${M * 5} 0 L 0 0 0 ${M * 5}`} fill="none" stroke="#3b2f1f" strokeOpacity="0.06" />
+          </pattern>
+          <radialGradient id="treeCanopy" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#86efac" />
+            <stop offset="55%" stopColor="#22c55e" />
+            <stop offset="100%" stopColor="#14532d" />
+          </radialGradient>
+          <radialGradient id="treeCanopy2" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#bef264" />
+            <stop offset="55%" stopColor="#65a30d" />
+            <stop offset="100%" stopColor="#365314" />
+          </radialGradient>
+          <linearGradient id="plotFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#f1e9d2" />
+          </linearGradient>
+          <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" />
+            <feOffset dx="0.5" dy="1" result="off" />
+            <feComponentTransfer><feFuncA type="linear" slope="0.35" /></feComponentTransfer>
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <linearGradient id="lightGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fef08a" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#fef08a" stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-      <defs>
-        <pattern id="grid" width={M * 5} height={M * 5} patternUnits="userSpaceOnUse">
-          <path d={`M ${M * 5} 0 L 0 0 0 ${M * 5}`} fill="none" stroke="#3b2f1f" strokeOpacity="0.06" />
-        </pattern>
-        <radialGradient id="treeCanopy" cx="35%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="#86efac" />
-          <stop offset="55%" stopColor="#22c55e" />
-          <stop offset="100%" stopColor="#14532d" />
-        </radialGradient>
-        <radialGradient id="treeCanopy2" cx="35%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="#bef264" />
-          <stop offset="55%" stopColor="#65a30d" />
-          <stop offset="100%" stopColor="#365314" />
-        </radialGradient>
-        <linearGradient id="plotFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#f1e9d2" />
-        </linearGradient>
-        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" />
-          <feOffset dx="0.5" dy="1" result="off" />
-          <feComponentTransfer><feFuncA type="linear" slope="0.35" /></feComponentTransfer>
-          <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <linearGradient id="lightGlow" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fef08a" stopOpacity="0.85" />
-          <stop offset="100%" stopColor="#fef08a" stopOpacity="0" />
-        </linearGradient>
-      </defs>
+        <g transform={`translate(${vp.tx} ${vp.ty}) scale(${vp.scale})`}>
+          {/* Background */}
+          <rect data-role="background" x={0} y={0} width={viewW} height={viewH} fill="#f5efe0" />
+          <rect data-role="background" x={0} y={0} width={viewW} height={viewH} fill="url(#grid)" />
 
-      <g transform={`translate(${vp.tx} ${vp.ty}) scale(${vp.scale})`}>
-        {/* Background */}
-        <rect data-role="background" x={0} y={0} width={viewW} height={viewH} fill="#f5efe0" />
-        <rect data-role="background" x={0} y={0} width={viewW} height={viewH} fill="url(#grid)" />
+          {/* Compound wall - double amber outline */}
+          <rect
+            data-role="background"
+            x={M}
+            y={M}
+            width={viewW - M * 2}
+            height={viewH - M * 2}
+            fill="none"
+            stroke="#92400e"
+            strokeWidth={3}
+          />
+          <rect
+            data-role="background"
+            x={M * 2.5}
+            y={M * 2.5}
+            width={viewW - M * 5}
+            height={viewH - M * 5}
+            fill="none"
+            stroke="#92400e"
+            strokeWidth={1}
+            strokeOpacity={0.5}
+          />
 
-        {/* Compound wall - double amber outline */}
-        <rect
-          data-role="background"
-          x={M}
-          y={M}
-          width={viewW - M * 2}
-          height={viewH - M * 2}
-          fill="none"
-          stroke="#92400e"
-          strokeWidth={3}
-        />
-        <rect
-          data-role="background"
-          x={M * 2.5}
-          y={M * 2.5}
-          width={viewW - M * 5}
-          height={viewH - M * 5}
-          fill="none"
-          stroke="#92400e"
-          strokeWidth={1}
-          strokeOpacity={0.5}
-        />
+          {interactive && (
+            <>
+              {/* East Handle */}
+              <rect
+                x={viewW - 4}
+                y={viewH / 2 - 8}
+                width={8}
+                height={16}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                rx={1}
+                className="cursor-ew-resize select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setCanvasDragging({
+                    handle: "e",
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    origW: bounds.w,
+                    origH: bounds.h,
+                  });
+                }}
+              />
+              {/* South Handle */}
+              <rect
+                x={viewW / 2 - 8}
+                y={viewH - 4}
+                width={16}
+                height={8}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                rx={1}
+                className="cursor-ns-resize select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setCanvasDragging({
+                    handle: "s",
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    origW: bounds.w,
+                    origH: bounds.h,
+                  });
+                }}
+              />
+              {/* South-East Handle */}
+              <rect
+                x={viewW - 6}
+                y={viewH - 6}
+                width={12}
+                height={12}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                rx={1.5}
+                className="cursor-nwse-resize select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setCanvasDragging({
+                    handle: "se",
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    origW: bounds.w,
+                    origH: bounds.h,
+                  });
+                }}
+              />
+            </>
+          )}
 
-        {interactive && (
-          <>
-            {/* East Handle */}
-            <rect
-              x={viewW - 4}
-              y={viewH / 2 - 8}
-              width={8}
-              height={16}
-              fill="#92400e"
-              stroke="white"
-              strokeWidth={1.5}
-              rx={1}
-              className="cursor-ew-resize select-none"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setCanvasDragging({
-                  handle: "e",
-                  startX: e.clientX,
-                  startY: e.clientY,
-                  origW: bounds.w,
-                  origH: bounds.h,
-                });
-              }}
-            />
-            {/* South Handle */}
-            <rect
-              x={viewW / 2 - 8}
-              y={viewH - 4}
-              width={16}
-              height={8}
-              fill="#92400e"
-              stroke="white"
-              strokeWidth={1.5}
-              rx={1}
-              className="cursor-ns-resize select-none"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setCanvasDragging({
-                  handle: "s",
-                  startX: e.clientX,
-                  startY: e.clientY,
-                  origW: bounds.w,
-                  origH: bounds.h,
-                });
-              }}
-            />
-            {/* South-East Handle */}
-            <rect
-              x={viewW - 6}
-              y={viewH - 6}
-              width={12}
-              height={12}
-              fill="#92400e"
-              stroke="white"
-              strokeWidth={1.5}
-              rx={1.5}
-              className="cursor-nwse-resize select-none"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setCanvasDragging({
-                  handle: "se",
-                  startX: e.clientX,
-                  startY: e.clientY,
-                  origW: bounds.w,
-                  origH: bounds.h,
-                });
-              }}
-            />
-          </>
-        )}
+          {/* Elements */}
+          {layout.elements.map((el) =>
+            renderElement(el, {
+              selected: selectedId === el.id,
+              plot: el.type === "plot" && el.plot_id ? plotById.get(el.plot_id) : undefined,
+              filterStatuses,
+              searchQuery,
+              interactive,
+              beginDrag,
+              onOpenPlot,
+              onOpenRoad,
+              toWorld,
+              onChange,
+            }),
+          )}
 
-        {/* Elements */}
-        {layout.elements.map((el) =>
-          renderElement(el, {
-            selected: selectedId === el.id,
-            plot: el.type === "plot" && el.plot_id ? plotById.get(el.plot_id) : undefined,
-            filterStatuses,
-            interactive,
-            beginDrag,
-            onOpenPlot,
-            onOpenRoad,
-            toWorld,
-            onChange,
-          }),
-        )}
+          {/* Ghost while drawing */}
+          {drawing && (
+            <g pointerEvents="none">
+              {renderElement(drawing.el, { selected: false, plot: undefined, filterStatuses, searchQuery, interactive: false, beginDrag: () => {}, toWorld, onChange, onOpenRoad })}
+            </g>
+          )}
 
-        {/* Ghost while drawing */}
-        {drawing && (
-          <g pointerEvents="none">
-            {renderElement(drawing.el, { selected: false, plot: undefined, filterStatuses, interactive: false, beginDrag: () => {}, toWorld, onChange, onOpenRoad })}
+          {/* Floating Road Details Overlay on Draw */}
+          {drawing && drawing.el.type === "road" && (
+            <RoadLabel points={drawing.el.points} width={drawing.el.width} />
+          )}
+
+          {/* Floating Road Details Overlay on Select */}
+          {selectedId && (() => {
+            const el = layout.elements.find((e) => e.id === selectedId);
+            if (el && el.type === "road") {
+              return <RoadLabel points={el.points} width={el.width} />;
+            }
+            return null;
+          })()}
+
+          {/* North compass */}
+          <g transform={`translate(${viewW - 40} 40)`}>
+            <circle r={16} fill="white" stroke="#3b2f1f" strokeOpacity={0.4} />
+            <text textAnchor="middle" y={-5} fontSize={9} fill="#3b2f1f" className="uppercase">
+              N
+            </text>
+            <polygon points="0,-12 3,4 0,0 -3,4" fill="#92400e" />
           </g>
-        )}
-
-        {/* Floating Road Details Overlay on Draw */}
-        {drawing && drawing.el.type === "road" && (
-          <RoadLabel points={drawing.el.points} width={drawing.el.width} />
-        )}
-
-        {/* Floating Road Details Overlay on Select */}
-        {selectedId && (() => {
-          const el = layout.elements.find((e) => e.id === selectedId);
-          if (el && el.type === "road") {
-            return <RoadLabel points={el.points} width={el.width} />;
-          }
-          return null;
-        })()}
-
-        {/* North compass */}
-        <g transform={`translate(${viewW - 40} 40)`}>
-          <circle r={16} fill="white" stroke="#3b2f1f" strokeOpacity={0.4} />
-          <text textAnchor="middle" y={-5} fontSize={9} fill="#3b2f1f" className="uppercase">
-            N
-          </text>
-          <polygon points="0,-12 3,4 0,0 -3,4" fill="#92400e" />
         </g>
-      </g>
-    </svg>
+      </svg>
+
+      {/* Floating Toolbar Controls on Map */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-sm border border-slate-200/80 shadow-md rounded-lg p-1">
+        <button
+          type="button"
+          onClick={() => {
+            setScrollZoomEnabled((prev) => {
+              const next = !prev;
+              toast.info(
+                next
+                  ? "Scroll zoom enabled: Mouse wheel zooms map."
+                  : "Scroll zoom disabled: Mouse wheel scrolls page."
+              );
+              return next;
+            });
+          }}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition-all select-none cursor-pointer",
+            scrollZoomEnabled
+              ? "bg-slate text-white shadow-sm"
+              : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+          )}
+          title={
+            scrollZoomEnabled
+              ? "Scroll zoom enabled: Mouse wheel zooms map. Click to lock map zoom and scroll page normally."
+              : "Scroll zoom disabled: Mouse wheel scrolls page. Click to enable map scroll zoom."
+          }
+        >
+          {scrollZoomEnabled ? (
+            <>
+              <Unlock className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Scroll Zoom: ON</span>
+            </>
+          ) : (
+            <>
+              <Lock className="h-3.5 w-3.5 text-slate-500" />
+              <span>Scroll Zoom: OFF</span>
+            </>
+          )}
+        </button>
+
+        <div className="h-4 w-[1px] bg-slate-200 my-auto" />
+
+        <button
+          type="button"
+          onClick={zoomIn}
+          className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+          title="Zoom in"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={zoomOut}
+          className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+          title="Zoom out"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={fit}
+          className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+          title="Fit map to view"
+        >
+          <Maximize2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -673,6 +800,7 @@ function renderElement(
     selected: boolean;
     plot: Plot | undefined;
     filterStatuses?: PlotStatus[];
+    searchQuery?: string;
     interactive: boolean;
     beginDrag: (
       ev: React.MouseEvent,
@@ -686,16 +814,28 @@ function renderElement(
     onChange?: (updater: (l: SiteLayout) => SiteLayout) => void;
   },
 ) {
-  const { selected, plot, filterStatuses, interactive, beginDrag, onOpenPlot, onOpenRoad, toWorld, onChange } = ctx;
-  const dim =
-    filterStatuses && plot && !filterStatuses.includes(plot.status) ? 0.2 : 1;
+  const { selected, plot, filterStatuses, searchQuery, interactive, beginDrag, onOpenPlot, onOpenRoad, toWorld, onChange } = ctx;
+
+  const qClean = searchQuery?.trim().toLowerCase() ?? "";
+  const plotNum = (plot?.plot_number ?? ("plot_number" in el ? (el as any).plot_number : "")) || "";
+  const matchesSearch = !qClean || (plotNum && plotNum.toLowerCase().includes(qClean));
+  const matchesStatus = !filterStatuses || (plot && filterStatuses.includes(plot.status));
+
+  const isSearchMatch = qClean.length > 0 && matchesSearch && el.type === "plot";
+  const isSearchMismatch = qClean.length > 0 && !matchesSearch && el.type === "plot";
+
+  const dim = (!matchesStatus || isSearchMismatch) ? 0.15 : 1;
 
   if (el.type === "plot") {
     const status: PlotStatus = plot?.status ?? "AVAILABLE";
     const useGradient = status === "AVAILABLE";
     const fill = useGradient ? "url(#plotFill)" : statusFill[status];
-    const stroke = selected ? "#92400e" : statusStroke[status];
-    const strokeW = selected ? 2 : 1;
+    const stroke = selected
+      ? "#92400e"
+      : isSearchMatch
+      ? "#2563eb"
+      : statusStroke[status];
+    const strokeW = selected ? 2.5 : isSearchMatch ? 3 : 1;
     const shape = el.shape ?? "rect";
     const rot = el.rotation ?? 0;
     const cx = (el.x + el.w / 2) * M;
@@ -745,6 +885,20 @@ function renderElement(
     return (
       <g key={el.id} opacity={dim} transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined}>
         {shapeNode}
+        {isSearchMatch && (
+          <rect
+            x={x - 3}
+            y={y - 3}
+            width={w + 6}
+            height={h + 6}
+            fill="none"
+            stroke="#2563eb"
+            strokeWidth={2.5}
+            rx={4}
+            className="animate-pulse"
+            pointerEvents="none"
+          />
+        )}
         {/* Corner tick marks — surveyor style (only for rect/hex) */}
         {(shape === "rect" || shape === "hex") &&
           [
@@ -1136,8 +1290,414 @@ function renderElement(
     );
   }
 
+  // Ultra-Sleek Combined Entry / Exit Marker
+  if (el.type === "entry_exit") {
+    const cx = el.x * M;
+    const cy = el.y * M;
+    const rot = el.rotation ?? 0;
+    const w = 11 * M;
+    const h = 2.6 * M;
+
+    return (
+      <g key={el.id}>
+        <g
+          transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined}
+          onMouseDown={(e) => beginDrag(e, el.id, "move")}
+          className={cn(interactive && "cursor-move", "outline-none select-none")}
+        >
+          <rect x={cx - w / 2 - 4} y={cy - h / 2 - 4} width={w + 8} height={h + 8} fill="transparent" />
+
+          <rect
+            x={cx - w / 2 + 1.5}
+            y={cy - h / 2 + 2}
+            width={w}
+            height={h}
+            rx={h / 2}
+            fill="#000000"
+            opacity={0.25}
+            pointerEvents="none"
+          />
+
+          <rect
+            x={cx - w / 2}
+            y={cy - h / 2}
+            width={w}
+            height={h}
+            rx={h / 2}
+            fill="#0f172a"
+            stroke="#38bdf8"
+            strokeWidth={1.5}
+            filter="url(#softShadow)"
+          />
+
+          {/* ENTRY section */}
+          <text
+            x={cx - w * 0.23}
+            y={cy + 0.5}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={h * 0.38}
+            fill="#4ade80"
+            fontWeight="bold"
+            letterSpacing="0.05em"
+            pointerEvents="none"
+          >
+            IN ➔
+          </text>
+
+          <line x1={cx} y1={cy - h * 0.3} x2={cx} y2={cy + h * 0.3} stroke="#334155" strokeWidth={1.5} />
+
+          {/* EXIT section */}
+          <text
+            x={cx + w * 0.23}
+            y={cy + 0.5}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={h * 0.38}
+            fill="#f87171"
+            fontWeight="bold"
+            letterSpacing="0.05em"
+            pointerEvents="none"
+          >
+            ⬅ OUT
+          </text>
+
+          {selected && (
+            <rect
+              x={cx - w / 2 - 3}
+              y={cy - h / 2 - 3}
+              width={w + 6}
+              height={h + 6}
+              rx={h / 2 + 3}
+              fill="none"
+              stroke="#92400e"
+              strokeDasharray="3 3"
+              strokeWidth={1.5}
+            />
+          )}
+        </g>
+
+        {selected && interactive && (() => {
+          const angleRad = (rot * Math.PI) / 180;
+          const hx = cx + Math.sin(angleRad) * (5.5 * M);
+          const hy = cy - Math.cos(angleRad) * (5.5 * M);
+          return (
+            <g>
+              <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="#92400e" strokeWidth={1} strokeDasharray="2 2" pointerEvents="none" />
+              <circle
+                cx={hx}
+                cy={hy}
+                r={5}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                className="cursor-alias select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  beginDrag(e, el.id, "rotate");
+                }}
+              />
+            </g>
+          );
+        })()}
+
+        {"label" in el && el.label && el.label !== "MAIN ENTRY / EXIT" && (
+          <text
+            x={cx}
+            y={cy + h / 2 + 2.5 * M}
+            textAnchor="middle"
+            fontSize={8}
+            fill="#0f172a"
+            pointerEvents="none"
+            className="uppercase font-bold tracking-wider select-none"
+          >
+            {el.label}
+          </text>
+        )}
+      </g>
+    );
+  }
+
+  // Clean Rotatable Entry Gate Icon with "ENTRY" Name
+  if (el.type === "entry") {
+    const cx = el.x * M;
+    const cy = el.y * M;
+    const rot = el.rotation ?? 0;
+    const size = 7.5 * M;
+
+    return (
+      <g key={el.id}>
+        <g
+          transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined}
+          onMouseDown={(e) => beginDrag(e, el.id, "move")}
+          className={cn(interactive && "cursor-move", "outline-none select-none")}
+        >
+          {/* Circular Badge Background */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r={size / 2}
+            fill="#064e3b"
+            stroke="#22c55e"
+            strokeWidth={2}
+          />
+
+          {/* Gate Icon Symbol */}
+          <text
+            x={cx}
+            y={cy - 3}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={size * 0.4}
+            fill="#ffffff"
+            pointerEvents="none"
+          >
+            ⛩
+          </text>
+
+          {/* Label Name "ENTRY" */}
+          <text
+            x={cx}
+            y={cy + size * 0.26}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={7.5}
+            fill="#ffffff"
+            fontWeight="bold"
+            letterSpacing="0.08em"
+            pointerEvents="none"
+          >
+            {el.label ?? "ENTRY"}
+          </text>
+
+          {selected && (
+            <circle
+              cx={cx}
+              cy={cy}
+              r={size / 2 + 3}
+              fill="none"
+              stroke="#92400e"
+              strokeDasharray="3 3"
+              strokeWidth={1.5}
+            />
+          )}
+        </g>
+
+        {/* 360° Rotation Handle */}
+        {selected && interactive && (() => {
+          const angleRad = (rot * Math.PI) / 180;
+          const hx = cx + Math.sin(angleRad) * (size / 2 + 12);
+          const hy = cy - Math.cos(angleRad) * (size / 2 + 12);
+          return (
+            <g>
+              <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="#92400e" strokeWidth={1} strokeDasharray="2 2" pointerEvents="none" />
+              <circle
+                cx={hx}
+                cy={hy}
+                r={5.5}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                className="cursor-alias select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  beginDrag(e, el.id, "rotate");
+                }}
+              />
+            </g>
+          );
+        })()}
+      </g>
+    );
+  }
+
+  // Clean Rotatable Exit Gate Icon with "EXIT" Name
+  if (el.type === "exit") {
+    const cx = el.x * M;
+    const cy = el.y * M;
+    const rot = el.rotation ?? 0;
+    const size = 7.5 * M;
+
+    return (
+      <g key={el.id}>
+        <g
+          transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined}
+          onMouseDown={(e) => beginDrag(e, el.id, "move")}
+          className={cn(interactive && "cursor-move", "outline-none select-none")}
+        >
+          {/* Circular Badge Background */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r={size / 2}
+            fill="#450a0a"
+            stroke="#ef4444"
+            strokeWidth={2}
+          />
+
+          {/* Gate Icon Symbol */}
+          <text
+            x={cx}
+            y={cy - 3}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={size * 0.4}
+            fill="#ffffff"
+            pointerEvents="none"
+          >
+            ⛩
+          </text>
+
+          {/* Label Name "EXIT" */}
+          <text
+            x={cx}
+            y={cy + size * 0.26}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={7.5}
+            fill="#ffffff"
+            fontWeight="bold"
+            letterSpacing="0.08em"
+            pointerEvents="none"
+          >
+            {el.label ?? "EXIT"}
+          </text>
+
+          {selected && (
+            <circle
+              cx={cx}
+              cy={cy}
+              r={size / 2 + 3}
+              fill="none"
+              stroke="#92400e"
+              strokeDasharray="3 3"
+              strokeWidth={1.5}
+            />
+          )}
+        </g>
+
+        {/* 360° Rotation Handle */}
+        {selected && interactive && (() => {
+          const angleRad = (rot * Math.PI) / 180;
+          const hx = cx + Math.sin(angleRad) * (size / 2 + 12);
+          const hy = cy - Math.cos(angleRad) * (size / 2 + 12);
+          return (
+            <g>
+              <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="#92400e" strokeWidth={1} strokeDasharray="2 2" pointerEvents="none" />
+              <circle
+                cx={hx}
+                cy={hy}
+                r={5.5}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                className="cursor-alias select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  beginDrag(e, el.id, "rotate");
+                }}
+              />
+            </g>
+          );
+        })()}
+      </g>
+    );
+  }
+
+  // Clean Rotatable Main Gate Icon with "GATE" Name
+  if (el.type === "gate") {
+    const cx = el.x * M;
+    const cy = el.y * M;
+    const rot = el.rotation ?? 0;
+    const size = 7.5 * M;
+
+    return (
+      <g key={el.id}>
+        <g
+          transform={rot ? `rotate(${rot} ${cx} ${cy})` : undefined}
+          onMouseDown={(e) => beginDrag(e, el.id, "move")}
+          className={cn(interactive && "cursor-move", "outline-none select-none")}
+        >
+          <circle
+            cx={cx}
+            cy={cy}
+            r={size / 2}
+            fill="#1e293b"
+            stroke="#fbbf24"
+            strokeWidth={2}
+          />
+          <text
+            x={cx}
+            y={cy - 3}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={size * 0.4}
+            fill="#ffffff"
+            pointerEvents="none"
+          >
+            ⛩
+          </text>
+          <text
+            x={cx}
+            y={cy + size * 0.26}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={7.5}
+            fill="#ffffff"
+            fontWeight="bold"
+            letterSpacing="0.08em"
+            pointerEvents="none"
+          >
+            {el.label ?? "GATE"}
+          </text>
+          {selected && (
+            <circle
+              cx={cx}
+              cy={cy}
+              r={size / 2 + 3}
+              fill="none"
+              stroke="#92400e"
+              strokeDasharray="3 3"
+              strokeWidth={1.5}
+            />
+          )}
+        </g>
+        {selected && interactive && (() => {
+          const angleRad = (rot * Math.PI) / 180;
+          const hx = cx + Math.sin(angleRad) * (size / 2 + 12);
+          const hy = cy - Math.cos(angleRad) * (size / 2 + 12);
+          return (
+            <g>
+              <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="#92400e" strokeWidth={1} strokeDasharray="2 2" pointerEvents="none" />
+              <circle
+                cx={hx}
+                cy={hy}
+                r={5.5}
+                fill="#92400e"
+                stroke="white"
+                strokeWidth={1.5}
+                className="cursor-alias select-none"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  beginDrag(e, el.id, "rotate");
+                }}
+              />
+            </g>
+          );
+        })()}
+      </g>
+    );
+  }
+
   // Other icon elements
   const iconFor: Record<string, string> = {
+    entry: "🚪",
+    exit: "🚪",
+    entry_exit: "🚪",
     gate: "⛩",
     water_tank: "💧",
     clubhouse: "🏛",
@@ -1206,6 +1766,9 @@ export function createElement(type: PlanElement["type"], x: number, y: number, s
   if (type === "garden") return { id, type: "garden", x, y, w: 20, h: 15 } as PlanElement;
   if (type === "parking") return { id, type: "parking", x, y, w: 20, h: 12 } as PlanElement;
   if (type === "text") return { id, type: "text", x, y, text: "Label", size: 3 } as PlanElement;
+  if (type === "entry") return { id, type: "entry", x, y, label: "ENTRY GATE", rotation: 0 } as PlanElement;
+  if (type === "exit") return { id, type: "exit", x, y, label: "EXIT GATE", rotation: 0 } as PlanElement;
+  if (type === "entry_exit") return { id, type: "entry_exit", x, y, label: "MAIN ENTRY / EXIT", rotation: 0 } as PlanElement;
   return { id, type, x, y, label: type.replace("_", " ") } as PlanElement;
 }
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Phone, MessageCircle, Mail, Plus } from "lucide-react";
+import { Phone, MessageCircle, Mail, Plus, UserCheck, ChevronDown, ChevronUp, Activity } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import Decimal from "decimal.js";
@@ -29,6 +29,7 @@ export function PlotDrawer({ plotId, onClose }: { plotId: string; onClose: () =>
   const [payStageId, setPayStageId] = useState<string | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
   const [inqOpen, setInqOpen] = useState(false);
+  const [showStaffHandling, setShowStaffHandling] = useState(false);
   const [emailDialog, setEmailDialog] = useState<{
     open: boolean;
     recipientEmail: string;
@@ -50,6 +51,28 @@ export function PlotDrawer({ plotId, onClose }: { plotId: string; onClose: () =>
   const pct = totalDue.gt(0)
     ? Math.min(100, Math.round(totalPaid.div(totalDue).mul(100).toNumber()))
     : 0;
+  const plotAuditLogs = state.audit
+    .filter(
+      (a) =>
+        a.entity_id === plotId ||
+        (booking && a.entity_id === booking.id) ||
+        (a.detail && a.detail.toLowerCase().includes(`plot ${plot.plot_number.toLowerCase()}`)),
+    )
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  const bookingActorLog = plotAuditLogs.find((a) => a.action === "BOOKING_CREATED");
+
+  const plotTransactions = state.transactions.filter((t) => t.plot_id === plotId);
+  const plotCollectors = Array.from(
+    new Set(
+      plotTransactions
+        .map((t) => {
+          const matchingAudit = state.audit.find((a) => a.entity_id === t.id && a.action === "PAYMENT_RECORDED");
+          return matchingAudit?.actor_name;
+        })
+        .filter(Boolean),
+    ),
+  );
 
   return (
     <div>
@@ -283,6 +306,91 @@ export function PlotDrawer({ plotId, onClose }: { plotId: string; onClose: () =>
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Toggleable Staff Handling & Audit Trail Section */}
+      <div className="p-6 border-b border-border bg-surface/50">
+        <button
+          type="button"
+          onClick={() => setShowStaffHandling((prev) => !prev)}
+          className="w-full flex items-center justify-between text-xs font-semibold text-slate hover:text-gold transition-colors py-1 cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-gold" />
+            <span>Staff Handling & Action History</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
+            <span>{showStaffHandling ? "Hide" : "Show"}</span>
+            {showStaffHandling ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </div>
+        </button>
+
+        {showStaffHandling && (
+          <div className="mt-4 pt-3 border-t border-border/60 space-y-4">
+            {/* Sales & Handling Staff Summary */}
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                Staff In Charge & Sales
+              </p>
+
+              {/* Booked / Sold By Staff */}
+              {booking && (
+                <div className="rounded-lg bg-white border border-border p-3 flex items-center justify-between text-xs">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Booked / Sold By</p>
+                    <p className="font-semibold text-slate mt-0.5">
+                      {bookingActorLog ? bookingActorLog.actor_name : "Org Staff"}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Sales Staff
+                  </span>
+                </div>
+              )}
+
+              {/* Recent Payment Collectors */}
+              {plotCollectors.length > 0 && (
+                <div className="rounded-lg bg-white border border-border p-3 text-xs">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Payment Collectors</p>
+                  <div className="space-y-1">
+                    {plotCollectors.map((collectorName, i) => (
+                      <div key={i} className="flex items-center justify-between text-slate">
+                        <span className="font-medium">• {collectorName}</span>
+                        <span className="text-[10px] text-muted-foreground">Recorded payments</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Plot Audit Action Trail */}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
+                Plot Action History ({plotAuditLogs.length})
+              </p>
+              {plotAuditLogs.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No audit records logged for this plot.</p>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {plotAuditLogs.map((log) => (
+                    <div key={log.id} className="rounded-lg border border-border/60 bg-white p-2.5 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-slate text-[11px]">{log.detail}</p>
+                        <span className="text-[9px] font-mono text-muted-foreground shrink-0">{fmtDate(log.timestamp)}</span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <span>By: <strong className="text-slate font-medium">{log.actor_name}</strong></span>
+                        <span>•</span>
+                        <span className="uppercase tracking-wider">{log.action.replace(/_/g, " ")}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

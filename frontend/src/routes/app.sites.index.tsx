@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState } from "@/components/ui-ext/EmptyState";
 import { useApp } from "@/data/store";
-import { orgScope, siteProgress } from "@/data/selectors";
+import { orgScope, siteProgress, currentUser, can } from "@/data/selectors";
 import { Button } from "@/components/ui/button";
-import { Map as MapIcon, Plus } from "lucide-react";
+import { Map as MapIcon, Plus, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/app/sites/")({
   head: () => ({ meta: [{ title: "Sites — PropVault" }] }),
@@ -12,9 +12,28 @@ export const Route = createFileRoute("/app/sites/")({
 });
 
 function Sites() {
+  const me = useApp(currentUser);
   const orgId = useApp((s) => s.session?.org_id);
   const sites = useApp((s) => orgScope(s.sites, orgId));
   const plots = useApp((s) => orgScope(s.plots, orgId));
+
+  const isAdmin = me?.permissions?.is_org_admin;
+  const canView = isAdmin || can(me?.permissions, "sites", "view");
+  const canAdd = isAdmin || can(me?.permissions, "sites", "add");
+
+  if (!canView) {
+    return (
+      <AppShell variant="tenant" title="Sites" subtitle="Access restricted">
+        <div className="max-w-md bg-white rounded-xl border border-border p-8 text-center">
+          <ShieldAlert className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+          <h3 className="font-display text-lg font-semibold mb-1">Access Restricted</h3>
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to view sites.
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell
@@ -22,11 +41,13 @@ function Sites() {
       title="Sites"
       subtitle="Portfolio"
       actions={
-        <Button asChild className="bg-slate hover:bg-slate/90">
-          <Link to="/app/sites/new">
-            <Plus className="h-4 w-4" /> Add site
-          </Link>
-        </Button>
+        canAdd ? (
+          <Button asChild className="bg-slate hover:bg-slate/90">
+            <Link to="/app/sites/new">
+              <Plus className="h-4 w-4" /> Add site
+            </Link>
+          </Button>
+        ) : null
       }
     >
       {sites.length === 0 ? (
