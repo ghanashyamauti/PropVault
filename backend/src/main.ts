@@ -8,8 +8,19 @@ import { existsSync, mkdirSync } from "fs";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const allowedOrigins = (
+    process.env.CORS_ORIGIN ??
+    "http://localhost:8080,http://localhost:5173,http://localhost:3000,https://propvault-flax.vercel.app"
+  ).split(",");
+
   app.enableCors({
-    origin: (process.env.CORS_ORIGIN ?? "http://localhost:8080").split(","),
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
