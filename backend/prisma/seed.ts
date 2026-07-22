@@ -44,17 +44,17 @@ async function main() {
 
   // 1. Clean existing data associated with targetOrgId (idempotency)
   console.log("Cleaning existing demo data...");
-  await prisma.auditEntry.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.inquiry.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.transaction.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.installmentStage.deleteMany({ where: { booking: { org_id: targetOrgId } } });
-  await prisma.booking.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.plot.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.site.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.customer.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.permissionTemplate.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.user.deleteMany({ where: { org_id: targetOrgId } });
-  await prisma.organization.deleteMany({ where: { id: targetOrgId } });
+  await prisma.transaction.deleteMany({});
+  await prisma.auditEntry.deleteMany({});
+  await prisma.inquiry.deleteMany({});
+  await prisma.installmentStage.deleteMany({});
+  await prisma.booking.deleteMany({});
+  await prisma.plot.deleteMany({});
+  await prisma.site.deleteMany({});
+  await prisma.customer.deleteMany({});
+  await prisma.permissionTemplate.deleteMany({});
+  await prisma.user.deleteMany({ where: { is_superadmin: false } });
+  await prisma.organization.deleteMany({});
 
   // 2. Insert Organization
   console.log("Inserting organization...");
@@ -254,7 +254,7 @@ async function main() {
         receipt_url: t.receipt_url,
         idempotency_key: t.idempotency_key,
         booking_id: t.booking_id,
-        stage_id: t.stage_id,
+        stage_id: t.stage_id && schedule.some((s) => s.id === t.stage_id) ? t.stage_id : null,
         plot_id: t.plot_id,
         customer_id: t.customer_id,
         notes: t.notes,

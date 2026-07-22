@@ -176,55 +176,100 @@ function greenValleyLayout() {
 }
 
 function sunriseLayout() {
-  const els: any[] = [];
-  els.push({
-    id: uuid("el"),
-    type: "road",
-    name: "Central Spine",
-    width: 9,
-    points: [
-      { x: 15, y: 105 },
-      { x: 70, y: 100 },
-      { x: 130, y: 108 },
-      { x: 200, y: 102 },
-    ],
-  });
-  els.push({
-    id: uuid("el"),
-    type: "road",
-    name: "Sunrise Cross",
-    width: 6,
-    points: [
-      { x: 105, y: 25 },
-      { x: 108, y: 100 },
-      { x: 106, y: 175 },
-    ],
-  });
-  els.push({ id: uuid("el"), type: "gate", x: 12, y: 100, label: "Entry" });
-  els.push({ id: uuid("el"), type: "gate", x: 205, y: 100, label: "Exit" });
-  els.push({ id: uuid("el"), type: "garden", x: 45, y: 40, w: 45, h: 30 });
-  els.push({ id: uuid("el"), type: "garden", x: 130, y: 130, w: 45, h: 30 });
-  els.push({ id: uuid("el"), type: "clubhouse", x: 50, y: 145, label: "Clubhouse" });
-  els.push({ id: uuid("el"), type: "water_tank", x: 175, y: 55, label: "Water Tank" });
-  els.push({ id: uuid("el"), type: "parking", x: 135, y: 45, w: 30, h: 18 });
-  els.push({ id: uuid("el"), type: "dp_box", x: 20, y: 155 });
-  for (let i = 0; i < 8; i++) {
-    els.push({ id: uuid("el"), type: "tree", x: 25 + i * 22, y: 118 });
-  }
-  els.push({ id: uuid("el"), type: "text", x: 110, y: 210, text: "SUNRISE TOWNSHIP", size: 3 });
+  const plotSpecs: Array<{ number: string; x: number; y: number; w: number; h: number }> = [];
 
-  const plotPositions = [
-    { n: "S-01", x: 20, y: 65, w: 22, h: 18 },
-    { n: "S-02", x: 20, y: 130, w: 22, h: 18 },
-    { n: "S-03", x: 145, y: 75, w: 22, h: 18 },
-    { n: "S-04", x: 170, y: 130, w: 22, h: 18 },
-    { n: "S-05", x: 70, y: 155, w: 22, h: 18 },
-    { n: "S-06", x: 75, y: 45, w: 22, h: 18 },
+  // Left column: P-01 to P-07 (7 plots)
+  const leftPlots = ["P-01", "P-02", "P-03", "P-04", "P-05", "P-07", "P-00"];
+  leftPlots.forEach((num, idx) => {
+    plotSpecs.push({ number: num, x: 25, y: 22 + idx * 14, w: 14, h: 10 });
+  });
+
+  // Middle-left column: P-08 to P-14 (7 plots)
+  const midPlots = ["P-08", "P-09", "P-10", "P-11", "P-12", "P-13", "P-14"];
+  midPlots.forEach((num, idx) => {
+    plotSpecs.push({ number: num, x: 45, y: 22 + idx * 14, w: 14, h: 10 });
+  });
+
+  // Right column: P-17 to P-20 (4 large plots)
+  const rightPlots = [
+    { number: "P-17", y: 22 },
+    { number: "P-18", y: 52 },
+    { number: "P-19", y: 82 },
+    { number: "P-20", y: 112 },
   ];
-  for (const p of plotPositions) {
-    els.push({ id: uuid("el"), type: "plot", plot_number: p.n, x: p.x, y: p.y, w: p.w, h: p.h });
+  rightPlots.forEach((p) => {
+    plotSpecs.push({ number: p.number, x: 70, y: p.y, w: 35, h: 22 });
+  });
+
+  const elements: any[] = [];
+
+  // Central North-South Boulevard
+  elements.push({
+    id: uuid("el"),
+    type: "road",
+    name: "Sunrise Avenue",
+    width: 8,
+    points: [
+      { x: 62, y: 15 },
+      { x: 62, y: 155 },
+    ],
+  });
+
+  // Curved East Road
+  elements.push({
+    id: uuid("el"),
+    type: "road",
+    name: "East Boulevard",
+    width: 7,
+    points: [
+      { x: 110, y: 15 },
+      { x: 120, y: 50 },
+      { x: 130, y: 90 },
+      { x: 135, y: 155 },
+    ],
+  });
+
+  // South Perimeter Road
+  elements.push({
+    id: uuid("el"),
+    type: "road",
+    name: "South Road",
+    width: 8,
+    points: [
+      { x: 15, y: 155 },
+      { x: 135, y: 155 },
+    ],
+  });
+
+  // Amenities
+  elements.push({ id: uuid("el"), type: "garden", x: 80, y: 142, w: 45, h: 18 });
+  elements.push({ id: uuid("el"), type: "parking", x: 112, y: 55, w: 25, h: 18 });
+  elements.push({ id: uuid("el"), type: "parking", x: 112, y: 80, w: 25, h: 18 });
+  elements.push({ id: uuid("el"), type: "water_tank", x: 122, y: 30, label: "Water Tank" });
+
+  // Gates
+  elements.push({ id: uuid("el"), type: "entry", x: 18, y: 155, label: "Main Entry" });
+  elements.push({ id: uuid("el"), type: "exit", x: 132, y: 155, label: "Exit Gate" });
+
+  // Tree border along spine
+  for (let i = 0; i < 9; i++) {
+    elements.push({ id: uuid("el"), type: "tree", x: 60, y: 20 + i * 14 });
   }
-  return els;
+
+  // Plots
+  for (const p of plotSpecs) {
+    elements.push({
+      id: uuid("el"),
+      type: "plot",
+      plot_number: p.number,
+      x: p.x,
+      y: p.y,
+      w: p.w,
+      h: p.h,
+    });
+  }
+
+  return { elements, plotSpecs };
 }
 
 // -----------------------------------------------------------------------------
@@ -376,6 +421,7 @@ export function buildSeed() {
   };
 
   const site2Id = uuid("site");
+  const { elements: site2Elements, plotSpecs: site2PlotSpecs } = sunriseLayout();
   const site2 = {
     id: site2Id,
     org_id: orgId,
@@ -386,7 +432,7 @@ export function buildSeed() {
     layout: {
       version: 1,
       bounds: { w: 220, h: 220 },
-      elements: sunriseLayout(),
+      elements: site2Elements,
     },
     created_at: iso(-90),
   };
@@ -427,24 +473,26 @@ export function buildSeed() {
   }
 
   // Site 2
-  for (let i = 1; i <= 6; i++) {
-    const number = `S-${i.toString().padStart(2, "0")}`;
+  for (const p of site2PlotSpecs) {
+    const lengthFt = Math.round(p.w * 3.28084);
+    const widthFt = Math.round(p.h * 3.28084);
+    const area = lengthFt * widthFt;
     const plotId = uuid("plt");
-    const el = site2.layout.elements.find(
-      (e) => e.type === "plot" && (e as any).plot_number === number,
+    const el = site2Elements.find(
+      (e) => e.type === "plot" && (e as any).plot_number === p.number,
     );
     if (el && el.type === "plot") el.plot_id = plotId;
     plots.push({
       id: plotId,
       org_id: orgId,
       site_id: site2Id,
-      plot_number: number,
-      length: 40,
-      width: 60,
-      area: 2400,
-      price: (2400 * 3800).toString(),
-      facing: "E",
-      plot_type: "RESIDENTIAL",
+      plot_number: p.number,
+      length: lengthFt,
+      width: widthFt,
+      area,
+      price: (area * 3800).toString(),
+      facing: (["N", "S", "E", "W"] as const)[p.number.charCodeAt(2) % 4],
+      plot_type: p.number === "P-17" || p.number === "P-20" ? "CORNER" : "RESIDENTIAL",
       status: "AVAILABLE" as const,
       notes: "",
     });
