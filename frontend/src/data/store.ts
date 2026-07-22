@@ -3,6 +3,7 @@ import { createWithEqualityFn } from "zustand/traditional";
 import { persist } from "zustand/middleware";
 import { shallow } from "zustand/shallow";
 import { buildSeed, type SeedState } from "./seed";
+import { api, isApiEnabled } from "@/lib/api-client";
 import type {
   AuditEntry,
   Customer,
@@ -405,6 +406,11 @@ export const useApp = createWithEqualityFn<AppState>()(
         set((prev) => ({
           sites: prev.sites.map((s) => (s.id === id ? { ...s, layout } : s)),
         }));
+        if (isApiEnabled) {
+          api.patch(`/sites/${id}`, { layout }).catch((err) => {
+            console.warn("Failed to persist site layout to backend API:", err);
+          });
+        }
       },
 
       createPlot(input) {
