@@ -720,23 +720,23 @@ export function PlanRenderer({
         </g>
       </svg>
 
-      {/* Floating Status Color Legend Key Overlay */}
-      <div className="absolute top-3 left-3 z-10 hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-md rounded-lg px-3 py-1.5 text-xs select-none">
+      {/* Floating Status Color Legend Key Overlay (Bottom Left) */}
+      <div className="absolute bottom-3 left-3 z-10 hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-md rounded-lg px-3 py-1.5 text-xs select-none">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-0.5">Legend:</span>
         <div className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-md bg-emerald-100 border-2 border-emerald-600" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" />
           <span className="font-semibold text-slate-800 text-[11px]">Available (Green)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-md bg-yellow-100 border-2 border-yellow-500" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-400 ring-2 ring-yellow-200" />
           <span className="font-semibold text-slate-800 text-[11px]">Inquiry (Yellow)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-md bg-blue-100 border-2 border-blue-600" />
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-blue-200" />
           <span className="font-semibold text-slate-800 text-[11px]">Booked (Blue)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-md bg-red-100 border-2 border-red-600" />
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-red-200" />
           <span className="font-semibold text-slate-800 text-[11px]">Sold (Red)</span>
         </div>
       </div>

@@ -362,12 +362,12 @@ function Designer() {
             {toolHints[activeTool ?? "select"]}
           </div>
 
-          <div className="absolute bottom-3 left-3 flex items-center gap-2">
+          <div className="absolute bottom-3 left-80 z-10 hidden md:flex items-center gap-2">
             <button
               onClick={() => {
                 setLayout(historyRef.current[0]);
               }}
-              className="rounded-md bg-white border border-border px-2 py-1 text-[10px] uppercase tracking-widest hover:bg-secondary"
+              className="rounded-md bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <Maximize className="h-3 w-3 inline mr-1" />
               Fit
