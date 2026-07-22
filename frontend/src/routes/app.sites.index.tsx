@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Map as MapIcon, Plus, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/app/sites/")({
-  head: () => ({ meta: [{ title: "Sites — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Sites — PropertyWala" }] }),
   component: Sites,
 });
 

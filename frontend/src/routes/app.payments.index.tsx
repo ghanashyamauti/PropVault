@@ -293,7 +293,7 @@ function Payments() {
                       const custEmail = findCustomerEmail(t);
                       const relatedPlot = plots.find(p => p.id === t.plot_id);
                       const subject = `Payment Confirmation & Receipt - ${t.party_name}`;
-                      const bodyText = `Dear ${t.party_name},\n\nWe are pleased to confirm receipt of your payment.\n\nPayment Mode: ${t.payment_mode}\nAmount received: ${money(t.amount)}\nDate of payment: ${fmtDate(t.transaction_date)}\nReference: ${t.type}${relatedPlot ? `\nPlot Number: ${relatedPlot.plot_number}` : ""}\nNotes: ${t.notes || "—"}\n\nThank you for choosing PropVault.\n\nBest regards,\n${orgName || "PropVault Team"}`;
+                      const bodyText = `Dear ${t.party_name},\n\nWe are pleased to confirm receipt of your payment.\n\nPayment Mode: ${t.payment_mode}\nAmount received: ${money(t.amount)}\nDate of payment: ${fmtDate(t.transaction_date)}\nReference: ${t.type}${relatedPlot ? `\nPlot Number: ${relatedPlot.plot_number}` : ""}\nNotes: ${t.notes || "—"}\n\nThank you for choosing PropertyWala.\n\nBest regards,\n${orgName || "PropertyWala Team"}`;
 
                       setEmailDialog({
                         open: true,

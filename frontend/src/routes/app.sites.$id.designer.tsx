@@ -25,7 +25,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/sites/$id/designer")({
-  head: () => ({ meta: [{ title: "Master-plan designer — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Master-plan designer — PropertyWala" }] }),
   component: Designer,
 });
 

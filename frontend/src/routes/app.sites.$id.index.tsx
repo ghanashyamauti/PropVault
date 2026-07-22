@@ -34,7 +34,7 @@ import { RoadDrawer } from "@/components/plots/RoadDrawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/app/sites/$id/")({
-  head: () => ({ meta: [{ title: "Site — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Site — PropertyWala" }] }),
   component: SiteDetail,
 });
 

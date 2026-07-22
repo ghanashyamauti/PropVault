@@ -13,7 +13,7 @@ export const Route = createFileRoute("/change-password")({
     if (!s.session) throw redirect({ to: "/login" });
   },
   head: () => ({
-    meta: [{ title: "Set a new password — PropVault" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Set a new password — PropertyWala" }, { name: "robots", content: "noindex" }],
   }),
   component: ChangePassword,
 });

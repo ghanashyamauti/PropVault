@@ -19,7 +19,7 @@ import type { Transaction } from "@/data/types";
 import { Upload, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/payments/new")({
-  head: () => ({ meta: [{ title: "Record payment — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Record payment — PropertyWala" }] }),
   component: NewPayment,
 });
 

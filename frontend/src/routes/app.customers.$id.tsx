@@ -122,7 +122,7 @@ function CustomerDetail() {
             </div>
           </div>
           <div className="text-right text-xs text-muted-foreground">
-            <p className="font-display italic text-lg text-slate">PropVault</p>
+            <p className="font-display italic text-lg text-slate">PropertyWala</p>
             <p>Statement generated {fmtDate(now.toISOString())}</p>
           </div>
         </div>
@@ -225,10 +225,10 @@ function CustomerDetail() {
                                 : `Installment Reminder: Upcoming payment for Plot ${plot.plot_number}`;
 
                             const bodyText = isPaid
-                              ? `Dear ${customer.full_name},\n\nWe are pleased to confirm receipt of your payment for stage "${s.stage_name}" of Plot ${plot.plot_number} at ${site.name}.\n\nStage: ${s.stage_name}\nAmount paid: ${money(s.paid_amount)} of ${money(s.amount_due)}\nDate of payment: ${s.paid_date ? fmtDate(s.paid_date) : fmtDate(now.toISOString())}\n\nThank you for choosing PropVault.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropVault Team"}`
+                              ? `Dear ${customer.full_name},\n\nWe are pleased to confirm receipt of your payment for stage "${s.stage_name}" of Plot ${plot.plot_number} at ${site.name}.\n\nStage: ${s.stage_name}\nAmount paid: ${money(s.paid_amount)} of ${money(s.amount_due)}\nDate of payment: ${s.paid_date ? fmtDate(s.paid_date) : fmtDate(now.toISOString())}\n\nThank you for choosing PropertyWala.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropertyWala Team"}`
                               : isOverdue
-                                ? `Dear ${customer.full_name},\n\nThis is an urgent notification that your payment for stage "${s.stage_name}" of Plot ${plot.plot_number} at ${site.name} is overdue.\n\nStage: ${s.stage_name}\nAmount due: ${money(new Decimal(s.amount_due).minus(s.paid_amount).toString())}\nOriginal due date: ${fmtDate(s.due_date)}\n\nPlease clear the outstanding dues as soon as possible.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropVault Team"}`
-                                : `Dear ${customer.full_name},\n\nThis is a friendly reminder of your upcoming installment for stage "${s.stage_name}" of Plot ${plot.plot_number} at ${site.name}.\n\nStage: ${s.stage_name}\nAmount due: ${money(new Decimal(s.amount_due).minus(s.paid_amount).toString())}\nDue date: ${fmtDate(s.due_date)}\n\nPlease make arrangements to clear this payment by the due date.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropVault Team"}`;
+                                ? `Dear ${customer.full_name},\n\nThis is an urgent notification that your payment for stage "${s.stage_name}" of Plot ${plot.plot_number} at ${site.name} is overdue.\n\nStage: ${s.stage_name}\nAmount due: ${money(new Decimal(s.amount_due).minus(s.paid_amount).toString())}\nOriginal due date: ${fmtDate(s.due_date)}\n\nPlease clear the outstanding dues as soon as possible.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropertyWala Team"}`
+                                : `Dear ${customer.full_name},\n\nThis is a friendly reminder of your upcoming installment for stage "${s.stage_name}" of Plot ${plot.plot_number} at ${site.name}.\n\nStage: ${s.stage_name}\nAmount due: ${money(new Decimal(s.amount_due).minus(s.paid_amount).toString())}\nDue date: ${fmtDate(s.due_date)}\n\nPlease make arrangements to clear this payment by the due date.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropertyWala Team"}`;
 
                             setEmailDialog({
                               open: true,
@@ -279,7 +279,7 @@ function CustomerDetail() {
                             title="Send email receipt"
                             onClick={() => {
                               const subject = `Payment Confirmation & Receipt - Plot ${plot?.plot_number || "Booking"}`;
-                              const bodyText = `Dear ${customer.full_name},\n\nWe are pleased to confirm receipt of your payment.\n\nPayment Mode: ${t.payment_mode}\nAmount received: ${money(t.amount)}\nDate of payment: ${fmtDate(t.transaction_date)}\nReference: ${t.type}\nNotes: ${t.notes || "—"}\n\nThank you for choosing PropVault.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropVault Team"}`;
+                              const bodyText = `Dear ${customer.full_name},\n\nWe are pleased to confirm receipt of your payment.\n\nPayment Mode: ${t.payment_mode}\nAmount received: ${money(t.amount)}\nDate of payment: ${fmtDate(t.transaction_date)}\nReference: ${t.type}\nNotes: ${t.notes || "—"}\n\nThank you for choosing PropertyWala.\n\nBest regards,\n${state.session?.org_id ? state.organizations.find(o => o.id === state.session.org_id)?.name : "PropertyWala Team"}`;
 
                               setEmailDialog({
                                 open: true,

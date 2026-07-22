@@ -6,7 +6,7 @@ import autoTable from "jspdf-autotable";
 import { money, fmtDate } from "@/data/selectors";
 import type { Transaction, Customer, Site, Plot, InstallmentStage, Booking } from "@/data/types";
 
-const BRAND = "PropVault";
+const BRAND = "PropertyWala";
 
 function header(doc: jsPDF, title: string, subtitle?: string) {
   doc.setFont("helvetica", "bold");

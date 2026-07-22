@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/superadmin/dashboard")({
-  head: () => ({ meta: [{ title: "Overview — PropVault Platform" }] }),
+  head: () => ({ meta: [{ title: "Overview — PropertyWala Platform" }] }),
   component: SuperDashboard,
 });
 
@@ -22,7 +22,7 @@ function SuperDashboard() {
     <AppShell
       variant="superadmin"
       title="Platform overview"
-      subtitle="PropVault"
+      subtitle="PropertyWala"
       actions={
         <Button asChild className="bg-slate hover:bg-slate/90">
           <Link to="/superadmin/organizations/new">

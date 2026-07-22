@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { currentUser, can } from "@/data/selectors";
 
 export const Route = createFileRoute("/app/settings")({
-  head: () => ({ meta: [{ title: "Settings — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Settings — PropertyWala" }] }),
   component: Settings,
 });
 

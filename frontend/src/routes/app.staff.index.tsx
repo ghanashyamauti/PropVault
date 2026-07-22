@@ -13,7 +13,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import type { User } from "@/data/types";
 
 export const Route = createFileRoute("/app/staff/")({
-  head: () => ({ meta: [{ title: "Staff — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Staff — PropertyWala" }] }),
   component: StaffPage,
 });
 

@@ -10,7 +10,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/sites/new")({
-  head: () => ({ meta: [{ title: "New site — PropVault" }] }),
+  head: () => ({ meta: [{ title: "New site — PropertyWala" }] }),
   component: NewSite,
 });
 

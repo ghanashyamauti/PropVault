@@ -51,7 +51,7 @@ function PrintPlan() {
           <div className="text-right text-xs text-parchment-ink/70">
             <p>Drawn {fmtDate(site.created_at)}</p>
             <p className="mt-1">{plots.length} plots · unit {site.area_unit}</p>
-            <p className="mt-1 font-display italic text-parchment-ink">PropVault</p>
+            <p className="mt-1 font-display italic text-parchment-ink">PropertyWala</p>
           </div>
         </header>
 
@@ -92,7 +92,7 @@ function PrintPlan() {
           </div>
           <div className="text-right">
             <p className="font-display italic text-lg text-parchment-ink">
-              PropVault
+              PropertyWala
             </p>
             <p className="text-[10px] uppercase tracking-widest">
               Developer Edition

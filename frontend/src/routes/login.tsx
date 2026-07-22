@@ -10,8 +10,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — PropVault" },
-      { name: "description", content: "Sign in to your PropVault workspace." },
+      { title: "Sign in — PropertyWala" },
+      { name: "description", content: "Sign in to your PropertyWala workspace." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -123,11 +123,11 @@ function Login() {
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
-            alt="PropVault Logo"
+            alt="PropertyWala Logo"
             className="h-10 w-10 object-contain invert brightness-0"
           />
           <div>
-            <p className="font-display italic text-3xl font-semibold">PropVault</p>
+            <p className="font-display italic text-3xl font-semibold">PropertyWala</p>
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 mt-1">
               Developer Edition
             </p>
@@ -144,7 +144,7 @@ function Login() {
           </p>
         </div>
         <div className="text-[10px] uppercase tracking-widest text-white/30">
-          © {new Date().getFullYear()} PropVault Platform
+          © {new Date().getFullYear()} PropertyWala Platform
         </div>
 
         {/* Decorative parchment strip */}
@@ -205,7 +205,7 @@ function Login() {
             </p>
             <ul className="space-y-1.5 text-xs">
               <li>
-                <span className="font-mono text-slate">super@propvault.app</span> · Super@123
+                <span className="font-mono text-slate">super@propertywala.app</span> · Super@123
                 <span className="text-muted-foreground"> — Platform admin</span>
               </li>
               <li>

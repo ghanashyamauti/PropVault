@@ -354,7 +354,7 @@ function StaffFormComponent({ mode, userId }: Props) {
 }
 
 export const Route = createFileRoute("/app/staff/new")({
-  head: () => ({ meta: [{ title: "Invite staff — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Invite staff — PropertyWala" }] }),
   component: () => <StaffFormComponent mode="create" />,
 });
 export { StaffFormComponent };

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/customers/")({
-  head: () => ({ meta: [{ title: "Customers — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Customers — PropertyWala" }] }),
   component: Customers,
 });
 

@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/app/templates/")({
-  head: () => ({ meta: [{ title: "Permission templates — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Permission templates — PropertyWala" }] }),
   component: Templates,
 });
 

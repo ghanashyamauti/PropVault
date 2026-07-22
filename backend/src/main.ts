@@ -35,6 +35,6 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT ?? 3001);
   await app.listen(port);
-  console.log(`PropVault backend on http://localhost:${port}`);
+  console.log(`PropertyWala backend on http://localhost:${port}`);
 }
 bootstrap();

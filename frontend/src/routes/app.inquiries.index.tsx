@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { MessageSquare, Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/app/inquiries/")({
-  head: () => ({ meta: [{ title: "Customer Inquiries — PropVault" }] }),
+  head: () => ({ meta: [{ title: "Customer Inquiries — PropertyWala" }] }),
   component: Inquiries,
 });
 

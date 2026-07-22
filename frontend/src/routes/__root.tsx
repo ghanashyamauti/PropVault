@@ -85,13 +85,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PropVault — Plot & Land Developer OS" },
+      { title: "PropertyWala — Plot & Land Developer OS" },
       {
         name: "description",
         content:
-          "PropVault is a multi-tenant platform for plot developers to manage sites, master-plan designs, plot sales, installments, staff, and cash flow.",
+          "PropertyWala is a multi-tenant platform for plot developers to manage sites, master-plan designs, plot sales, installments, staff, and cash flow.",
       },
-      { property: "og:title", content: "PropVault — Plot & Land Developer OS" },
+      { property: "og:title", content: "PropertyWala — Plot & Land Developer OS" },
       {
         property: "og:description",
         content:

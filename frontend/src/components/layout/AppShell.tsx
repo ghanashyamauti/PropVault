@@ -101,11 +101,11 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
             <div className="flex items-center gap-2.5">
               <img
                 src="/logo.png"
-                alt="PropVault Logo"
+                alt="PropertyWala Logo"
                 className="h-7 w-7 object-contain group-hover:rotate-12 transition-transform duration-300"
               />
               <div className="font-display italic text-2xl font-semibold tracking-tight text-slate">
-                PropVault
+                PropertyWala
               </div>
             </div>
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1.5 pl-9">
@@ -160,7 +160,7 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold truncate">{user?.full_name ?? "User"}</p>
               <p className="text-[10px] text-muted-foreground truncate">
-                {org?.name ?? (user?.is_superadmin ? "PropVault Platform" : "")}
+                {org?.name ?? (user?.is_superadmin ? "PropertyWala Platform" : "")}
               </p>
             </div>
             <button
@@ -191,8 +191,8 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
       >
         <div className="p-6 border-b border-border flex items-center justify-between">
           <Link to={variant === "tenant" ? "/app/dashboard" : "/superadmin/dashboard"} className="flex items-center gap-2">
-            <img src="/logo.png" alt="PropVault Logo" className="h-7 w-7" />
-            <span className="font-display italic text-xl font-semibold text-slate">PropVault</span>
+            <img src="/logo.png" alt="PropertyWala Logo" className="h-7 w-7" />
+            <span className="font-display italic text-xl font-semibold text-slate">PropertyWala</span>
           </Link>
           <button
             onClick={() => setMobileMenuOpen(false)}
@@ -252,7 +252,7 @@ export function AppShell({ variant, title, subtitle, actions, children }: AppShe
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold truncate">{user?.full_name ?? "User"}</p>
               <p className="text-[10px] text-muted-foreground truncate">
-                {org?.name ?? (user?.is_superadmin ? "PropVault Platform" : "")}
+                {org?.name ?? (user?.is_superadmin ? "PropertyWala Platform" : "")}
               </p>
             </div>
             <button

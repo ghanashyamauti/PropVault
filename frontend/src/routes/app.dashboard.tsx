@@ -21,7 +21,7 @@ import { Plus, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({
-    meta: [{ title: "Dashboard — PropVault" }],
+    meta: [{ title: "Dashboard — PropertyWala" }],
   }),
   component: Dashboard,
 });
