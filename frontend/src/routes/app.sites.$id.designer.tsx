@@ -319,16 +319,16 @@ function Designer() {
                     )}
                   >
                     <span
-                      className="h-2 w-2 rounded-full"
+                      className="h-2.5 w-2.5 rounded-full"
                       style={{
                         background:
                           s === "SOLD"
-                            ? "#92400e"
+                            ? "#dc2626"
                             : s === "BOOKED"
-                              ? "#1d4ed8"
+                              ? "#2563eb"
                               : s === "INQUIRY"
-                                ? "#d97706"
-                                : "#94a3b8",
+                                ? "#ca8a04"
+                                : "#16a34a",
                       }}
                     />
                     {s}
